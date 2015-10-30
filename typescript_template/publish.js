@@ -20,7 +20,7 @@ function publish(symbolSet) {
             method = normalizePrimitives(method);
             method = overrideMethodTypeParams(classSymbol, method);
             method = overrideMethodParamTypes(classSymbol, method);
-            method = overrideMethodReturnType(classSymbol, method);
+            method = overrideReturnType(classSymbol, method);
             method = overrideVariadicParams(classSymbol, method);
             method = fixOptionalParameters(method);
             method = fixThingFields(method);
@@ -30,7 +30,7 @@ function publish(symbolSet) {
         });
 
         classSymbol.properties = classSymbol.properties.map(function (property) {
-            return overridePropertyType(classSymbol, property);
+            return overrideReturnType(classSymbol, property);
         });
     }
 
@@ -48,7 +48,6 @@ var callbackParamTypes = {
     'addMembersArray': 'KiiUser[]',
     'adminContext': 'KiiAppAdminContext',
     'anErrorString': 'string',
-    'argument': 'T',
     'bodyBlob': 'Blob',
     'bucket': 'KiiBucket',
     'bucketToDelete': 'KiiBucket',
@@ -68,18 +67,11 @@ var callbackParamTypes = {
     'errorString': 'string',
     'execResult': 'KiiServerCodeExecResult',
     'existed': 'boolean',
-    'group': function (classSymbol, method, callbackName, callbackParams) {
-        if (classSymbol.name == "KiiThing" && method.name == "registerOwner" || "unregisterOwner") {
-            return "T";
-        } else {
-            return 'KiiGroup';
-        }
-    },
+    'group': 'KiiGroup',
     'groupList': 'KiiGroup[]',
     'isOwner': 'boolean',
     'isSubscribed': 'boolean',
     'memberList': 'KiiUser[]',
-    'message': 'T',
     'network': 'KiiSocialNetworkName',
     'nextPaginationKey': 'string',
     'nextQuery': 'KiiQuery',
@@ -88,7 +80,6 @@ var callbackParamTypes = {
     'query': 'KiiQuery',
     'queryPerformed': 'KiiQuery',
     'removeMembersArray': 'KiiUser[]',
-    'resultSet': 'T[]',
     'statusCode': 'number',
     'subscription': 'KiiPushSubscription',
     'theACL': 'KiiACL',
@@ -113,369 +104,549 @@ var callbackParamTypes = {
     'theTgtObjectUri': 'string',
     'theUser': 'KiiUser',
     'thing': 'KiiThing',
-    'topic': function (classSymbol, method, callbackName, callbackParams) {
-        if (classSymbol.name == "KiiPushSubscription") {
-            return "T";
-        } else {
-            return 'KiiTopic';
-        }
-    },
+    'topic': 'KiiTopic',
     'topicList': 'KiiTopic[]',
-    'user': function (classSymbol, method, callbackName, callbackParams) {
-        if (classSymbol.name == "KiiThing" && method.name == "isOwner") {
-            return "T";
-        } else {
-            return 'KiiUser';
-        }
-    }
+    'user': 'KiiUser'
 };
 
 /**
- * Types of method parameters.
+ * The type information overrides.
  */
-var methodParamTypeOverrides = {
+var overrides = {
     "Kii": {
-        "setAccessTokenExpiration": {
-            "expiresIn": "number"
+        "encryptedBucketWithName": {
+            "returnType": "KiiBucket"
         },
-
+        "getAccessTokenExpiration": {
+            "returnType": "number"
+        },
         "groupWithNameAndMembers": {
-            "members": "KiiUser[]"
+            "parameters": {
+                "members": "KiiUser[]"
+            }
+        },
+        "setAccessTokenExpiration": {
+            "parameters": {
+                "expiresIn": "number"
+            }
         }
     },
     "KiiACLEntry": {
-        "setSubject": {
-            "subject": "KiiACLSubject"
-        },
         "entryWithSubject": {
-            "Subject": "KiiACLSubject"
+            "parameters": {
+                "Subject": "KiiACLSubject"
+            },
+            "returnType": "KiiACLEntry"
+        },
+        "getSubject": {
+            "returnType": "T",
+            "typeParams": [
+                "T extends KiiACLSubject"
+            ]
+        },
+        "setSubject": {
+            "parameters": {
+                "subject": "KiiACLSubject"
+            }
         }
     },
     "KiiAnalytics": {
-        "initializeWithSite": {
-            "deviceid": "string"
-        },
         "initialize": {
-            "deviceid": "string"
+            "parameters": {
+                "deviceid": "string"
+            }
+        },
+        "initializeWithSite": {
+            "parameters": {
+                "deviceid": "string"
+            }
+        },
+        "trackEvent": {
+            "returnType": "Promise<void>"
+        },
+        "trackEventWithExtras": {
+            "returnType": "Promise<void>"
         },
         "trackEventWithExtrasAndCallbacks": {
-            "callbacks": "{ success(): void; failure(error: Error): void; }"
+            "parameters": {
+                "callbacks": "{ success(): void; failure(error: Error): void; }"
+            }
+        }
+    },
+    "KiiAnonymousUser": {
+        "getID": {
+            "returnType": "string"
+        }
+    },
+    "KiiAnyAuthenticatedUser": {
+        "getID": {
+            "returnType": "string"
         }
     },
     "KiiAppAdminContext": {
-        "registerThing": {
-            "fields": "KiiThingFields"
-        },
         "findUserByEmail": {
-            "callbacks": "{ success(adminContext: KiiAppAdminContext, theMatchedUser: KiiUser): void; failure(adminContext: KiiAppAdminContext, anErrorString: string): void; }"
+            "parameters": {
+                "callbacks": "{ success(adminContext: KiiAppAdminContext, theMatchedUser: KiiUser): void; failure(adminContext: KiiAppAdminContext, anErrorString: string): void; }"
+            },
+            "returnType": "Promise<[KiiAppAdminContext, KiiUser]>"
         },
         "findUserByPhone": {
-            "callbacks": "{ success(adminContext: KiiAppAdminContext, theMatchedUser: KiiUser): void; failure(adminContext: KiiAppAdminContext, anErrorString: string): void; }"
+            "parameters": {
+                "callbacks": "{ success(adminContext: KiiAppAdminContext, theMatchedUser: KiiUser): void; failure(adminContext: KiiAppAdminContext, anErrorString: string): void; }"
+            },
+            "returnType": "Promise<[KiiAppAdminContext, KiiUser]>"
         },
         "findUserByUsername": {
-            "callbacks": "{ success(adminContext: KiiAppAdminContext, theMatchedUser: KiiUser): void; failure(adminContext: KiiAppAdminContext, anErrorString: string): void; }"
+            "parameters": {
+                "callbacks": "{ success(adminContext: KiiAppAdminContext, theMatchedUser: KiiUser): void; failure(adminContext: KiiAppAdminContext, anErrorString: string): void; }"
+            },
+            "returnType": "Promise<[KiiAppAdminContext, KiiUser]>"
+        },
+        "registerThing": {
+            "parameters": {
+                "fields": "KiiThingFields"
+            }
+        }
+    },
+    "KiiBucket": {
+        "createObjectWithType": {
+            "returnType": "KiiObject"
+        },
+        "executeQuery": {
+            "callbackParams": {
+                "success": {
+                    "resultSet": "T[]"
+                }
+            },
+            "typeParams": [
+                "T"
+            ]
         }
     },
     "KiiClause": {
         "and": {
-            "A": "KiiClause[]"
+            "parameters": {
+                "A": "KiiClause[]"
+            },
+            "returnType": "KiiClause",
+            "variadicParams": [
+                "A"
+            ]
         },
-        "or": {
-            "A": "KiiClause[]"
+        "equals": {
+            "returnType": "KiiClause"
+        },
+        "greaterThan": {
+            "returnType": "KiiClause"
+        },
+        "greaterThanOrEqual": {
+            "returnType": "KiiClause"
         },
         "inClause": {
-            "values": "any[]"
+            "parameters": {
+                "values": "any[]"
+            },
+            "returnType": "KiiClause"
+        },
+        "lessThan": {
+            "returnType": "KiiClause"
+        },
+        "lessThanOrEqual": {
+            "returnType": "KiiClause"
+        },
+        "notEquals": {
+            "returnType": "KiiClause"
+        },
+        "or": {
+            "parameters": {
+                "A": "KiiClause[]"
+            },
+            "returnType": "KiiClause",
+            "variadicParams": [
+                "A"
+            ]
+        },
+        "startsWith": {
+            "returnType": "KiiClause"
+        }
+    },
+    "KiiGeoPoint": {
+        "getLatitude": {
+            "returnType": "number"
+        },
+        "getLongitude": {
+            "returnType": "number"
         }
     },
     "KiiGroup": {
-        "groupWithNameAndMembers": {
-            "members": "KiiUser[]"
+        "encryptedBucketWithName": {
+            "returnType": "KiiBucket"
         },
         "groupWithID": {
-            "groupId": "string"
+            "parameters": {
+                "groupId": "string"
+            },
+            "returnType": "KiiGroup"
+        },
+        "groupWithNameAndMembers": {
+            "parameters": {
+                "members": "KiiUser[]"
+            }
         }
     },
     "KiiObject": {
-        "saveAllFields": {
-            "overwrite": "boolean"
+        "get": {
+            "returnType": "T",
+            "typeParams": [
+                "T"
+            ]
+        },
+        "getCreated": {
+            "returnType": "number"
+        },
+        "isValidObjectID": {
+            "returnType": "boolean"
         },
         "save": {
-            "overwrite": "boolean"
+            "parameters": {
+                "overwrite": "boolean"
+            }
+        },
+        "saveAllFields": {
+            "parameters": {
+                "overwrite": "boolean"
+            }
         }
     },
     "KiiPushMessageBuilder": {
         "apnsAlert": {
-            "alert": "string | APNSAlert"
+            "parameters": {
+                "alert": "string | APNSAlert"
+            },
+            "returnType": "KiiPushMessageBuilder"
         },
-        "gcmData": {
-            "data": "{ [key: string]: string }"
+        "apnsBadge": {
+            "returnType": "KiiPushMessageBuilder"
+        },
+        "apnsCategory": {
+            "returnType": "KiiPushMessageBuilder"
+        },
+        "apnsContentAvailable": {
+            "returnType": "KiiPushMessageBuilder"
         },
         "apnsData": {
-            "data": "{ [key: string]: string | number | boolean }"
+            "parameters": {
+                "data": "{ [key: string]: string | number | boolean }"
+            },
+            "returnType": "KiiPushMessageBuilder"
+        },
+        "apnsSound": {
+            "returnType": "KiiPushMessageBuilder"
+        },
+        "enableApns": {
+            "returnType": "KiiPushMessageBuilder"
+        },
+        "enableGcm": {
+            "returnType": "KiiPushMessageBuilder"
+        },
+        "enableJpush": {
+            "returnType": "KiiPushMessageBuilder"
+        },
+        "enableMqtt": {
+            "returnType": "KiiPushMessageBuilder"
+        },
+        "gcmCollapseKey": {
+            "returnType": "KiiPushMessageBuilder"
+        },
+        "gcmData": {
+            "parameters": {
+                "data": "{ [key: string]: string }"
+            },
+            "returnType": "KiiPushMessageBuilder"
+        },
+        "gcmDelayWhileIdle": {
+            "returnType": "KiiPushMessageBuilder"
+        },
+        "gcmRestrictedPackageName": {
+            "returnType": "KiiPushMessageBuilder"
+        },
+        "gcmTimeToLive": {
+            "returnType": "KiiPushMessageBuilder"
         },
         "jpushData": {
-            "data": "{ [name: string]: string | number | boolean }"
+            "parameters": {
+                "data": "{ [name: string]: string | number | boolean }"
+            },
+            "returnType": "KiiPushMessageBuilder"
         },
         "mqttData": {
-            "data": "{ [key: string]: string }"
+            "parameters": {
+                "data": "{ [key: string]: string }"
+            },
+            "returnType": "KiiPushMessageBuilder"
+        },
+        "setSendToDevelopment": {
+            "returnType": "KiiPushMessageBuilder"
+        },
+        "setSendToProduction": {
+            "returnType": "KiiPushMessageBuilder"
         }
     },
     "KiiPushSubscription": {
-        "subscribe": {
-            "target": "T"
-        },
         "isSubscribed": {
-            "target": "T"
+            "callbackParams": {
+                "success": {
+                    "topic": "T"
+                }
+            },
+            "parameters": {
+                "target": "T"
+            },
+            "typeParams": [
+                "T extends KiiBucket | KiiTopic"
+            ]
+        },
+        "subscribe": {
+            "callbackParams": {
+                "success": {
+                    "topic": "T"
+                }
+            },
+            "parameters": {
+                "target": "T"
+            },
+            "typeParams": [
+                "T extends KiiBucket | KiiTopic"
+            ]
         },
         "unsubscribe": {
-            "target": "T"
+            "callbackParams": {
+                "success": {
+                    "topic": "T"
+                }
+            },
+            "parameters": {
+                "target": "T"
+            },
+            "typeParams": [
+                "T extends KiiBucket | KiiTopic"
+            ]
         }
     },
     "KiiQuery": {
-        "setLimit": {
-            "value": "number"
-        },
         "queryWithClause": {
-            "clause": "KiiClause"
+            "parameters": {
+                "clause": "KiiClause"
+            },
+            "returnType": "KiiQuery"
+        },
+        "setLimit": {
+            "parameters": {
+                "value": "number"
+            }
         }
     },
     "KiiServerCodeEntry": {
         "execute": {
-            "argument": "T"
+            "callbackParams": {
+                "success": {
+                    "argument": "T"
+                },
+                "failure": {
+                    "argument": "T"
+                }
+            },
+            "parameters": {
+                "argument": "T"
+            },
+            "typeParams": [
+                "T"
+            ]
         }
     },
     "KiiSocialConnect": {
-        "logIn": {
-            "networkName": "KiiSocialNetworkName",
-            "options": "KiiSocialConnectOptions"
-        },
-        "linkCurrentUserWithNetwork": {
-            "networkName": "KiiSocialNetworkName",
-            "options": "KiiSocialConnectOptions"
-        },
-        "unLinkCurrentUserFromNetwork": {
-            "networkName": "KiiSocialNetworkName"
+        "getAccessTokenExpirationForNetwork": {
+            "parameters": {
+                "networkName": "KiiSocialNetworkName"
+            }
         },
         "getAccessTokenForNetwork": {
-            "networkName": "KiiSocialNetworkName"
-        },
-        "getAccessTokenExpirationForNetwork": {
-            "networkName": "KiiSocialNetworkName"
+            "parameters": {
+                "networkName": "KiiSocialNetworkName"
+            }
         },
         "getAccessTokenObjectForNetwork": {
-            "networkName": "KiiSocialNetworkName"
+            "parameters": {
+                "networkName": "KiiSocialNetworkName"
+            }
+        },
+        "linkCurrentUserWithNetwork": {
+            "parameters": {
+                "networkName": "KiiSocialNetworkName",
+                "options": "KiiSocialConnectOptions"
+            }
+        },
+        "logIn": {
+            "parameters": {
+                "networkName": "KiiSocialNetworkName",
+                "options": "KiiSocialConnectOptions"
+            }
+        },
+        "unLinkCurrentUserFromNetwork": {
+            "parameters": {
+                "networkName": "KiiSocialNetworkName"
+            }
         }
     },
     "KiiThing": {
+        "fields": {
+            "returnType": "KiiThingFields"
+        },
         "isOwner": {
-            "owner": "T"
+            "callbackParams": {
+                "success": {
+                    "user": "T"
+                }
+            },
+            "parameters": {
+                "owner": "T"
+            },
+            "typeParams": [
+                "T extends KiiUser | KiiGroup"
+            ]
         },
         "registerOwner": {
-            "owner": "T"
+            "callbackParams": {
+                "success": {
+                    "group": "T"
+                }
+            },
+            "parameters": {
+                "owner": "T"
+            },
+            "typeParams": [
+                "T extends KiiUser | KiiGroup"
+            ]
         },
         "unregisterOwner": {
-            "owner": "T"
+            "callbackParams": {
+                "success": {
+                    "group": "T"
+                }
+            },
+            "parameters": {
+                "owner": "T"
+            },
+            "typeParams": [
+                "T extends KiiUser | KiiGroup"
+            ]
         }
     },
     "KiiTopic": {
         "sendMessage": {
-            "message": "T"
+            "callbackParams": {
+                "success": {
+                    "message": "T"
+                }
+            },
+            "parameters": {
+                "message": "T"
+            },
+            "typeParams": [
+                "T"
+            ]
         }
     },
     "KiiUser": {
+        "encryptedBucketWithName": {
+            "returnType": "KiiBucket"
+        },
+        "get": {
+            "returnType": "T",
+            "typeParams": [
+                "T"
+            ]
+        },
+        "getAccessTokenObject": {
+            "returnType": "{ access_token: string, expires_at: Date }"
+        },
+        "getLinkedSocialAccounts": {
+            "returnType": "{ [name: string]: KiiSocialAccountInfo }"
+        },
+        "loggedIn": {
+            "returnType": "boolean"
+        },
         "putIdentity": {
-            "password": "string",
-            "removeFields": "string[]"
+            "parameters": {
+                "password": "string",
+                "removeFields": "string[]"
+            }
         },
         "update": {
-            "removeFields": "string[]"
-        },
-        "userWithUsername": {
-            "username": "string",
-            "password": "string"
-        },
-        "userWithPhoneNumber": {
-            "phoneNumber": "string",
-            "password": "string"
-        },
-        "userWithPhoneNumberAndUsername": {
-            "phoneNumber": "string",
-            "username": "string",
-            "password": "string"
-        },
-        "userWithEmailAddress": {
-            "emailAddress": "string",
-            "password": "string"
-        },
-        "userWithEmailAddressAndPhoneNumber": {
-            "emailAddress": "string",
-            "phoneNumber": "string",
-            "password": "string"
-        },
-        "userWithEmailAddressAndUsername": {
-            "emailAddress": "string",
-            "username": "string",
-            "password": "string"
+            "parameters": {
+                "removeFields": "string[]"
+            }
         },
         "userWithCredentials": {
-            "emailAddress": "string",
-            "phoneNumber": "string",
-            "username": "string",
-            "password": "string"
+            "parameters": {
+                "emailAddress": "string",
+                "password": "string",
+                "phoneNumber": "string",
+                "username": "string"
+            },
+            "returnType": "KiiUser"
+        },
+        "userWithEmailAddress": {
+            "parameters": {
+                "emailAddress": "string",
+                "password": "string"
+            },
+            "returnType": "KiiUser"
+        },
+        "userWithEmailAddressAndPhoneNumber": {
+            "parameters": {
+                "emailAddress": "string",
+                "password": "string",
+                "phoneNumber": "string"
+            },
+            "returnType": "KiiUser"
+        },
+        "userWithEmailAddressAndUsername": {
+            "parameters": {
+                "emailAddress": "string",
+                "password": "string",
+                "username": "string"
+            },
+            "returnType": "KiiUser"
         },
         "userWithID": {
-            "userID": "string"
+            "parameters": {
+                "userID": "string"
+            },
+            "returnType": "KiiUser"
+        },
+        "userWithPhoneNumber": {
+            "parameters": {
+                "password": "string",
+                "phoneNumber": "string"
+            },
+            "returnType": "KiiUser"
+        },
+        "userWithPhoneNumberAndUsername": {
+            "parameters": {
+                "password": "string",
+                "phoneNumber": "string",
+                "username": "string"
+            },
+            "returnType": "KiiUser"
+        },
+        "userWithUsername": {
+            "parameters": {
+                "password": "string",
+                "username": "string"
+            },
+            "returnType": "KiiUser"
         }
-    }
-};
-
-/**
- * Return types of methods.
- */
-var methodReturnTypeOverrides = {
-    "Kii": {
-        "getAccessTokenExpiration": "number",
-        "encryptedBucketWithName": "KiiBucket"
-    },
-    "KiiACLEntry": {
-        "getSubject": "T",
-        "entryWithSubject": "KiiACLEntry"
-    },
-    "KiiAnalytics": {
-        "trackEvent": "Promise<void>",
-        "trackEventWithExtras": "Promise<void>"
-    },
-    "KiiAppAdminContext": {
-        "findUserByEmail": "Promise<[KiiAppAdminContext, KiiUser]>",
-        "findUserByPhone": "Promise<[KiiAppAdminContext, KiiUser]>",
-        "findUserByUsername": "Promise<[KiiAppAdminContext, KiiUser]>"
-    },
-    "KiiAnonymousUser": {
-        "getID": "string"
-    },
-    "KiiAnyAuthenticatedUser": {
-        "getID": "string"
-    },
-    "KiiBucket": {
-        "createObjectWithType": "KiiObject"
-    },
-    "KiiClause": {
-        "and": "KiiClause",
-        "or": "KiiClause",
-        "equals": "KiiClause",
-        "notEquals": "KiiClause",
-        "greaterThan": "KiiClause",
-        "greaterThanOrEqual": "KiiClause",
-        "lessThan": "KiiClause",
-        "lessThanOrEqual": "KiiClause",
-        "inClause": "KiiClause",
-        "startsWith": "KiiClause"
-    },
-    "KiiGeoPoint": {
-        "getLatitude": "number",
-        "getLongitude": "number"
-    },
-    "KiiGroup": {
-        "encryptedBucketWithName": "KiiBucket",
-        "groupWithID": "KiiGroup"
-    },
-    "KiiObject": {
-        "get": "T",
-        "getCreated": "number",
-        "isValidObjectID": "boolean"
-    },
-    "KiiPushMessageBuilder": {
-        "setSendToDevelopment": "KiiPushMessageBuilder",
-        "setSendToProduction": "KiiPushMessageBuilder",
-        "enableGcm": "KiiPushMessageBuilder",
-        "enableApns": "KiiPushMessageBuilder",
-        "enableJpush": "KiiPushMessageBuilder",
-        "enableMqtt": "KiiPushMessageBuilder",
-        "gcmData": "KiiPushMessageBuilder",
-        "gcmCollapseKey": "KiiPushMessageBuilder",
-        "gcmDelayWhileIdle": "KiiPushMessageBuilder",
-        "gcmTimeToLive": "KiiPushMessageBuilder",
-        "gcmRestrictedPackageName": "KiiPushMessageBuilder",
-        "apnsData": "KiiPushMessageBuilder",
-        "apnsAlert": "KiiPushMessageBuilder",
-        "apnsSound": "KiiPushMessageBuilder",
-        "apnsBadge": "KiiPushMessageBuilder",
-        "apnsContentAvailable": "KiiPushMessageBuilder",
-        "apnsCategory": "KiiPushMessageBuilder",
-        "jpushData": "KiiPushMessageBuilder",
-        "mqttData": "KiiPushMessageBuilder"
-    },
-    "KiiQuery": {
-        "queryWithClause": "KiiQuery"
-    },
-    "KiiUser": {
-        "userWithUsername": "KiiUser",
-        "encryptedBucketWithName": "KiiBucket",
-        "getLinkedSocialAccounts": "{ [name: string]: KiiSocialAccountInfo }",
-        "getAccessTokenObject": "{ access_token: string, expires_at: Date }",
-        "get": "T",
-        "userWithUsername": "KiiUser",
-        "userWithPhoneNumber": "KiiUser",
-        "userWithPhoneNumberAndUsername": "KiiUser",
-        "userWithEmailAddress": "KiiUser",
-        "userWithEmailAddressAndUsername": "KiiUser",
-        "userWithEmailAddressAndPhoneNumber": "KiiUser",
-        "userWithCredentials": "KiiUser",
-        "userWithID": "KiiUser",
-        "loggedIn": "boolean"
-    }
-};
-
-/**
- * Type parameters of methods.
- */
-var methodTypeParamsOverrides = {
-    "KiiBucket": {
-        "executeQuery": ["T"]
-    },
-    "KiiACLEntry": {
-        "getSubject": ["T extends KiiACLSubject"]
-    },
-    "KiiObject": {
-        "get": ["T"]
-    },
-    "KiiServerCodeEntry": {
-        "execute": ["T"]
-    },
-    "KiiPushSubscription": {
-        "subscribe": ["T extends KiiBucket | KiiTopic"],
-        "isSubscribed": ["T extends KiiBucket | KiiTopic"],
-        "unsubscribe": ["T extends KiiBucket | KiiTopic"]
-    },
-    "KiiThing": {
-        "isOwner": ["T extends KiiUser | KiiGroup"],
-        "registerOwner": ["T extends KiiUser | KiiGroup"],
-        "unregisterOwner": ["T extends KiiUser | KiiGroup"]
-    },
-    "KiiTopic": {
-        "sendMessage": ["T"]
-    },
-    "KiiUser": {
-        "get": ["T"]
-    }
-};
-
-/**
- * Variadic method parameters.
- */
-var variadicParamOverrides = {
-    "KiiClause": {
-        "and": ["A"],
-        "or": ["A"]
-    }
-};
-
-/**
- * Types of properties.
- */
-var propertyTypeOverrides = {
-    "KiiThing": {
-        "fields": "KiiThingFields"
     }
 };
 
@@ -556,11 +727,16 @@ function fixCallbacksParameter(classSymbol, method) {
         return param.name == "callbacks";
     });
 
+    var overrides = lookupClassMemberOverrides(classSymbol, method);
+
     /**
      * extracts parameter names of a callback method from code examples.
      */
     function extractParams(pattern, callbackName) {
         var params = [];
+
+        var overridesForCallback =
+                (overrides.callbackParams || {})[callbackName] || {};
 
         for (var example of method.example) {
             var match = example.desc.match(pattern);
@@ -571,7 +747,9 @@ function fixCallbacksParameter(classSymbol, method) {
 
             params = match[1].split(/, */);
             params = params.map(function (param) {
-                var type = callbackParamTypes[param];
+                var type =
+                        overridesForCallback[param] ||
+                        callbackParamTypes[param];
 
                 if (typeof type == "function") {
                     type = type(classSymbol, method, callbackName, params);
@@ -647,23 +825,20 @@ function normalizePrimitives(method) {
 /**
  * looks up the given table with the class name and the method name.
  */
-function lookupClassMemberOverrides(classSymbol, method, map) {
-    var mapForClass = map[classSymbol.name] || {};
+function lookupClassMemberOverrides(classSymbol, method) {
+    var mapForClass = overrides[classSymbol.name] || {};
 
-    return mapForClass[method.name];
+    return mapForClass[method.name] || {};
 }
 
 /**
  * overrides the type parameters of the given method.
  */
 function overrideMethodTypeParams(classSymbol, method) {
-    var overrides =
-            lookupClassMemberOverrides(classSymbol,
-                                       method,
-                                       methodTypeParamsOverrides);
+    var overrides = lookupClassMemberOverrides(classSymbol, method);
 
-    if (overrides) {
-        method.typeParams = overrides;
+    if (overrides.typeParams) {
+        method.typeParams = overrides.typeParams;
     }
 
     return method;
@@ -673,15 +848,12 @@ function overrideMethodTypeParams(classSymbol, method) {
  * overrides the types of the parameters.
  */
 function overrideMethodParamTypes(classSymbol, method) {
-    var overrides =
-            lookupClassMemberOverrides(classSymbol,
-                                       method,
-                                       methodParamTypeOverrides);
+    var overrides = lookupClassMemberOverrides(classSymbol, method);
 
-    if (overrides) {
+    if (overrides.parameters) {
         for (var param of method.params) {
-            if (overrides[param.name]) {
-                param.type = overrides[param.name];
+            if (overrides.parameters[param.name]) {
+                param.type = overrides.parameters[param.name];
             }
         }
     }
@@ -690,27 +862,13 @@ function overrideMethodParamTypes(classSymbol, method) {
 }
 
 /**
- * overrides the return type of the given method.
+ * overrides the return type of the given method or property.
  */
-function overrideMethodReturnType(classSymbol, method) {
-    return overrideType(classSymbol, method, methodReturnTypeOverrides);
-}
+function overrideReturnType(classSymbol, symbol) {
+    var overrides = lookupClassMemberOverrides(classSymbol, symbol);
 
-/**
- * overrides the type of the given property.
- */
-function overridePropertyType(classSymbol, property) {
-    return overrideType(classSymbol, property, propertyTypeOverrides);
-}
-
-/**
- * A support function for overrideMethodReturnType and overridePropertyType.
- */
-function overrideType(classSymbol, symbol, overrides) {
-    var type = lookupClassMemberOverrides(classSymbol, symbol, overrides);
-
-    if (type) {
-        symbol.type = type;
+    if (overrides.returnType) {
+        symbol.type = overrides.returnType;
     }
 
     return symbol;
@@ -720,14 +878,11 @@ function overrideType(classSymbol, symbol, overrides) {
  * marks some parameters as a variadic parameters.
  */
 function overrideVariadicParams(classSymbol, method) {
-    var overrides =
-            lookupClassMemberOverrides(classSymbol,
-                                       method,
-                                       variadicParamOverrides);
+    var overrides = lookupClassMemberOverrides(classSymbol, method);
 
-    if (overrides) {
+    if (overrides.variadicParams) {
         for (var param of method.params) {
-            if (overrides.indexOf(param.name) >= 0) {
+            if (overrides.variadicParams.indexOf(param.name) >= 0) {
                 param.isVariadic = true;
             }
         }
@@ -858,7 +1013,7 @@ function format(classes) {
     output.push("  } | {\n");
     output.push("      oauth_token: string,\n");
     output.push("      oauth_token_secret: string\n");
-    output.push("  };\n");
+    output.push("  }\n");
     output.push("\n");
 
     output.push("  interface KiiSocialAccountInfo {\n");
