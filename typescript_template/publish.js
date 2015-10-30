@@ -10,42 +10,362 @@ function publish(symbolSet) {
         return ($.is("CONSTRUCTOR") || $.isNamespace) && $.alias != "_global_";
     }
 
-    var symbols = symbolSet.toArray();
-    var classes = symbols.filter(isaClass).sort(makeSortBy("alias"));
+    try {
+        var symbols = symbolSet.toArray();
+        var classes = symbols.filter(isaClass).sort(makeSortBy("alias"));
 
-    for (var classSymbol of classes) {
-        classSymbol.methods = classSymbol.methods.map(function (method) {
-            // apply ad-hoc tweaks
-            method = fixCallbacksParameter(classSymbol, method);
-            method = normalizePrimitives(method);
-            method = overrideMethodTypeParams(classSymbol, method);
-            method = overrideMethodParamTypes(classSymbol, method);
-            method = overrideReturnType(classSymbol, method);
-            method = overrideVariadicParams(classSymbol, method);
-            method = fixOptionalParameters(method);
-            method = fixThingFields(method);
-            method = fixIdentityData(method);
+        for (var classSymbol of classes) {
+            classSymbol.methods = classSymbol.methods.map(function (method) {
+                // apply ad-hoc tweaks
+                method = fixCallbacksParameter(classSymbol, method);
+                method = overrideMethodTypeParams(classSymbol, method);
+                method = overrideMethodParamTypes(classSymbol, method);
+                method = overrideReturnType(classSymbol, method);
+                method = overrideVariadicParams(classSymbol, method);
+                method = fixOptionalParameters(method);
+                method = fixThingFields(method);
+                method = fixIdentityData(method);
 
-            return method;
+                resolveReferencingType(method.type, method);
+
+                method.params.forEach(function (param) {
+                    resolveReferencingType(param.type, method);
+                });
+
+                method = normalizePrimitives(method);
+
+                method = overrideTernEffects(classSymbol, method);
+                addTernEffectsForCallbacks(classSymbol, method);
+
+                return method;
+            });
+
+            classSymbol.properties = classSymbol.properties.map(function (property) {
+                return overrideReturnType(classSymbol, property);
+            });
+        }
+
+        // output TypeScript .d.ts file
+
+        var outputText = format(classes);
+
+        var outDir = JSDOC.opt.d || SYS.pwd + "../out/jsdoc/";
+
+        IO.saveFile(outDir, "kii.d.ts", outputText);
+
+        // output type definitions for Tern
+
+        classes.forEach(function (classSymbol) {
+            classSymbol.methods.forEach(function (method) {
+                method.params.forEach(function (param) {
+                    if (param.type.getTernCallbackType) {
+                        ternTypeAliases[param.type.getTernCallbackTypeName()] =
+                            param.type.getTernCallbackType();
+                    }
+                });
+            });
         });
 
-        classSymbol.properties = classSymbol.properties.map(function (property) {
-            return overrideReturnType(classSymbol, property);
-        });
+        IO.saveFile(outDir, "kii.json",
+                    JSON.stringify(buildTernJSONTypeDefinitions(classes),
+                                   null,
+                                   2));
+    } catch (e) {
+        console.error(e.stack);
+
+        throw e;
     }
+}
 
-    var outputText = format(classes);
+// type objects
 
-    var outDir = JSDOC.opt.d || SYS.pwd + "../out/jsdoc/";
+/**
+ * formats a (TypeScript) type as a Tern type.
+ */
+function formatTernType(type) {
+    if (!type) {
+        return String(type);
+    } if (type.formatTernType) {
+        return type.formatTernType();
+    } else {
+        var typeName = String(type);
 
-    IO.saveFile(outDir, "kii.d.ts", outputText);
+        if (typeName == "any") {
+            return "?";
+        } else if (typeName.match(/^[A-Z]/) && !ternTypeAliases[typeName]) {
+            return "+" + typeName;
+        } else {
+            return typeName;
+        }
+    }
 }
 
 /**
+ * resolves referencing type to actual type.
+ */
+function resolveReferencingType(type, method) {
+    if (type && type.resolveReferencingType) {
+        type.resolveReferencingType(method);
+    }
+}
+
+/**
+ * The type of arrays (Foo[] for TypeScript, [Foo] for Tern).
+ */
+function ArrayType(elementType) {
+    if (this instanceof ArrayType) {
+        this.elementType = elementType;
+
+        return this;
+    } else {
+        return new ArrayType(elementType);
+    }
+}
+
+/**
+ * formats this type as a TypeScript type.
+ */
+ArrayType.prototype.toString = function() {
+    return this.elementType + "[]";
+};
+
+/**
+ * formats this type as a Tern type.
+ */
+ArrayType.prototype.formatTernType = function() {
+    return "[" + formatTernType(this.elementType) + "]";
+};
+
+/**
+ * resolves referencing types contained in this type.
+ */
+ArrayType.prototype.resolveReferencingType = function(method) {
+    resolveReferencingType(this.elementType, method);
+};
+
+/**
+ * The type of Promise.
+ *
+ * Promise<[type1, type2, ...]> for TypeScript.
+ * Promise[:t=[type1, type2, ...]] for Tern.
+ */
+function PromiseType(elementTypes) {
+    if (this instanceof PromiseType) {
+        this.elementTypes = Array.apply([], arguments);
+
+        return this;
+    } else {
+        var type = new PromiseType();
+
+        return PromiseType.apply(type, arguments) || type;
+    }
+}
+
+/**
+ * formats this type as a TypeScript type.
+ */
+PromiseType.prototype.toString = function() {
+    if (this.elementTypes.length == 0) {
+        return "Promise<void>";
+    } else if (this.elementTypes.length == 1) {
+        return "Promise<" + this.elementTypes[0] + ">";
+    } else {
+        return "Promise<[" + this.elementTypes.join(", ") + "]>";
+    }
+};
+
+/**
+ * formats this type as a Tern type.
+ */
+PromiseType.prototype.formatTernType = function() {
+    if (this.elementTypes.length == 0) {
+        return "+Promise";
+    } else if (this.elementTypes.length == 1) {
+        return "+Promise[:t=" + formatTernType(this.elementTypes[0]) + "]";
+    } else {
+        var elementTypes = this.elementTypes.map(formatTernType).join(", ");
+
+        return "+Promise[:t=[" + elementTypes + "]]";
+    }
+};
+
+/**
+ * resolves referencing types contained in this type.
+ */
+PromiseType.prototype.resolveReferencingType = function(method) {
+    this.elementTypes.forEach(function (type) {
+        resolveReferencingType(type, method);
+    });
+};
+
+/**
+ * The type of callback functions.
+ *
+ * { success(t1, t2, ...) -> void; failure(s1, s2, ...) -> void } for TypeScript.
+ * { success: fn(t1, t2, ...); failure: fn(s1, s2, ...) } for Tern.
+ */
+function CallbackType(className, methodName, successParams, failureParams) {
+    if (this instanceof CallbackType) {
+        this.className = className;
+        this.methodName = methodName;
+        this.successParams = successParams;
+        this.failureParams = failureParams;
+
+        return this;
+    } else {
+        return new CallbackType(className, methodName, successParams, failureParams);
+    }
+}
+
+/**
+ * formats this type as a TypeScript type.
+ */
+CallbackType.prototype.toString = function() {
+    function formatParams(params) {
+        return params.map(function (param) {
+            return param.name + ": " + param.type;
+        }).join(", ");
+    }
+
+    var successParamsString = formatParams(this.successParams);
+    var failureParamsString = formatParams(this.failureParams);
+
+    return "{ success(" + successParamsString + "): void; failure(" + failureParamsString + "): void; }";
+};
+
+/**
+ * formats this type as a Tern type.
+ */
+CallbackType.prototype.formatTernType = function() {
+    return this.getTernCallbackTypeName();
+};
+
+/**
+ * Returns type name for this type.
+ *
+ * We cannot embed object types directly to other types, so that we have to
+ * name them in "!define".
+ */
+CallbackType.prototype.getTernCallbackTypeName = function() {
+    return this.className + "." + this.methodName + ".callbacks";
+};
+
+/**
+ * Returns actual type definition for "!define".
+ */
+CallbackType.prototype.getTernCallbackType = function() {
+    function formatParams(params) {
+        return params.map(function (param) {
+            return param.name + ": " + formatTernType(param.type);
+        }).join(", ");
+    }
+
+    var successParamsString = formatParams(this.successParams);
+    var failureParamsString = formatParams(this.failureParams);
+
+    return {
+        success: "fn(" + successParamsString + ")",
+        failure: "fn(" + failureParamsString + ")"
+    };
+};
+
+/**
+ * resolves referencing types contained in this type.
+ */
+CallbackType.prototype.resolveReferencingType = function(method) {
+    this.successParams.forEach(function (param) {
+        resolveReferencingType(param.type, method);
+    });
+
+    this.failureParams.forEach(function (param) {
+        resolveReferencingType(param.type, method);
+    });
+};
+
+/**
+ * The type that is different for TypeScript and Tern.
+ */
+function AdHocTypes(typescriptType, ternType) {
+    if (this instanceof AdHocTypes) {
+        this.typescriptType = typescriptType;
+        this.ternType = ternType;
+
+        return this;
+    } else {
+        return new AdHocTypes(typescriptType, ternType);
+    }
+}
+
+/**
+ * formats this type as a TypeScript type.
+ */
+AdHocTypes.prototype.toString = function() {
+    return this.typescriptType;
+};
+
+/**
+ * formats this type as a Tern type.
+ */
+AdHocTypes.prototype.formatTernType = function() {
+    return formatTernType(this.ternType);
+};
+
+/**
+ * resolves referencing types contained in this type.
+ */
+AdHocTypes.prototype.resolveReferencingType = function(method) {
+    resolveReferencingType(this.typescriptType, method);
+    resolveReferencingType(this.ternType, method);
+};
+
+/**
+ * The type that refrences to other type of a parameter
+ * (e.g. this type is same as the type of parameter "foo").
+ */
+function ReferencingType(parameterName) {
+    if (this instanceof ReferencingType) {
+        this.parameterName = parameterName;
+
+        return this;
+    } else {
+        return new ReferencingType(parameterName);
+    }
+}
+
+/**
+ * formats this type as a TypeScript type.
+ */
+ReferencingType.prototype.toString = function() {
+    return this.resolvedType.toString();
+};
+
+/**
+ * formats this type as a Tern type.
+ */
+ReferencingType.prototype.formatTernType = function() {
+    return this.resolvedType.formatTernType();
+};
+
+/**
+ * resolves this referencing type to actual type.
+ */
+ReferencingType.prototype.resolveReferencingType = function(method) {
+    var parameterName = this.parameterName;
+    var parameterIndex = method.params.findIndex(function (param) {
+        return param.name == parameterName;
+    });
+
+    this.resolvedParameterIndex = parameterIndex;
+    this.resolvedType = method.params[parameterIndex].type;
+};
+
+/**
  * Types for the parameters of callback methods.
+ *
+ * See also "callbackParams" in `overrides`.
  */
 var callbackParamTypes = {
-    'addMembersArray': 'KiiUser[]',
+    'addMembersArray': new ArrayType('KiiUser'),
     'adminContext': 'KiiAppAdminContext',
     'anErrorString': 'string',
     'bodyBlob': 'Blob',
@@ -68,10 +388,10 @@ var callbackParamTypes = {
     'execResult': 'KiiServerCodeExecResult',
     'existed': 'boolean',
     'group': 'KiiGroup',
-    'groupList': 'KiiGroup[]',
+    'groupList': new ArrayType('KiiGroup'),
     'isOwner': 'boolean',
     'isSubscribed': 'boolean',
-    'memberList': 'KiiUser[]',
+    'memberList': new ArrayType('KiiUser'),
     'network': 'KiiSocialNetworkName',
     'nextPaginationKey': 'string',
     'nextQuery': 'KiiQuery',
@@ -79,7 +399,7 @@ var callbackParamTypes = {
     'publishedUrl': 'string',
     'query': 'KiiQuery',
     'queryPerformed': 'KiiQuery',
-    'removeMembersArray': 'KiiUser[]',
+    'removeMembersArray': new ArrayType('KiiUser'),
     'statusCode': 'number',
     'subscription': 'KiiPushSubscription',
     'theACL': 'KiiACL',
@@ -87,7 +407,7 @@ var callbackParamTypes = {
     'theDeletedGroup': 'KiiGroup',
     'theDeletedObject': 'KiiObject',
     'theDeletedUser': 'KiiUser',
-    'theEntries': 'KiiACLEntry[]',
+    'theEntries': new ArrayType('KiiACLEntry'),
     'theGroup': 'KiiGroup',
     'theMatchedUser': 'KiiUser',
     'theObject': 'KiiObject',
@@ -105,12 +425,12 @@ var callbackParamTypes = {
     'theUser': 'KiiUser',
     'thing': 'KiiThing',
     'topic': 'KiiTopic',
-    'topicList': 'KiiTopic[]',
+    'topicList': new ArrayType('KiiTopic'),
     'user': 'KiiUser'
 };
 
 /**
- * The type information overrides.
+ * The type information overrides for class members.
  */
 var overrides = {
     "Kii": {
@@ -122,7 +442,7 @@ var overrides = {
         },
         "groupWithNameAndMembers": {
             "parameters": {
-                "members": "KiiUser[]"
+                "members": new ArrayType("KiiUser")
             }
         },
         "setAccessTokenExpiration": {
@@ -139,7 +459,7 @@ var overrides = {
             "returnType": "KiiACLEntry"
         },
         "getSubject": {
-            "returnType": "T",
+            "returnType": new AdHocTypes("T", "KiiACLSubject"),
             "typeParams": [
                 "T extends KiiACLSubject"
             ]
@@ -162,14 +482,14 @@ var overrides = {
             }
         },
         "trackEvent": {
-            "returnType": "Promise<void>"
+            "returnType": new PromiseType()
         },
         "trackEventWithExtras": {
-            "returnType": "Promise<void>"
+            "returnType": new PromiseType()
         },
         "trackEventWithExtrasAndCallbacks": {
             "parameters": {
-                "callbacks": "{ success(): void; failure(error: Error): void; }"
+                "callbacks": new CallbackType("KiiAnalytics", "trackEventWithExtrasAndCallbacks", [], [{"name": "error", "type": "Error"}])
             }
         }
     },
@@ -186,21 +506,21 @@ var overrides = {
     "KiiAppAdminContext": {
         "findUserByEmail": {
             "parameters": {
-                "callbacks": "{ success(adminContext: KiiAppAdminContext, theMatchedUser: KiiUser): void; failure(adminContext: KiiAppAdminContext, anErrorString: string): void; }"
+                "callbacks": new CallbackType("KiiAppAdminContext", "findUserByEmail", [{"name": "adminContext", type: "KiiAppAdminContext"}, {"name": "theMatchedUser", type: "KiiUser"}], [{"name": "adminContext", type: "KiiAppAdminContext"}, {"name": "anErrorString", type: "string"}])
             },
-            "returnType": "Promise<[KiiAppAdminContext, KiiUser]>"
+            "returnType": new PromiseType("KiiAppAdminContext", "KiiUser")
         },
         "findUserByPhone": {
             "parameters": {
-                "callbacks": "{ success(adminContext: KiiAppAdminContext, theMatchedUser: KiiUser): void; failure(adminContext: KiiAppAdminContext, anErrorString: string): void; }"
+                "callbacks": new CallbackType("KiiAppAdminContext", "findUserByPhone", [{"name": "adminContext", type: "KiiAppAdminContext"}, {"name": "theMatchedUser", type: "KiiUser"}], [{"name": "adminContext", type: "KiiAppAdminContext"}, {"name": "anErrorString", type: "string"}])
             },
-            "returnType": "Promise<[KiiAppAdminContext, KiiUser]>"
+            "returnType": new PromiseType("KiiAppAdminContext", "KiiUser")
         },
         "findUserByUsername": {
             "parameters": {
-                "callbacks": "{ success(adminContext: KiiAppAdminContext, theMatchedUser: KiiUser): void; failure(adminContext: KiiAppAdminContext, anErrorString: string): void; }"
+                "callbacks": new CallbackType("KiiAppAdminContext", "findUserByUsername", [{"name": "adminContext", type: "KiiAppAdminContext"}, {"name": "theMatchedUser", type: "KiiUser"}], [{"name": "adminContext", type: "KiiAppAdminContext"}, {"name": "anErrorString", type: "string"}])
             },
-            "returnType": "Promise<[KiiAppAdminContext, KiiUser]>"
+            "returnType": new PromiseType("KiiAppAdminContext", "KiiUser")
         },
         "registerThing": {
             "parameters": {
@@ -215,7 +535,7 @@ var overrides = {
         "executeQuery": {
             "callbackParams": {
                 "success": {
-                    "resultSet": "T[]"
+                    "resultSet": new ArrayType(new AdHocTypes("T", "?"))
                 }
             },
             "typeParams": [
@@ -226,7 +546,7 @@ var overrides = {
     "KiiClause": {
         "and": {
             "parameters": {
-                "A": "KiiClause[]"
+                "A": new ArrayType("KiiClause")
             },
             "returnType": "KiiClause",
             "variadicParams": [
@@ -244,7 +564,7 @@ var overrides = {
         },
         "inClause": {
             "parameters": {
-                "values": "any[]"
+                "values": new ArrayType("any")
             },
             "returnType": "KiiClause"
         },
@@ -259,7 +579,7 @@ var overrides = {
         },
         "or": {
             "parameters": {
-                "A": "KiiClause[]"
+                "A": new ArrayType("KiiClause")
             },
             "returnType": "KiiClause",
             "variadicParams": [
@@ -290,13 +610,13 @@ var overrides = {
         },
         "groupWithNameAndMembers": {
             "parameters": {
-                "members": "KiiUser[]"
+                "members": new ArrayType("KiiUser")
             }
         }
     },
     "KiiObject": {
         "get": {
-            "returnType": "T",
+            "returnType": new AdHocTypes("T", "?"),
             "typeParams": [
                 "T"
             ]
@@ -321,7 +641,7 @@ var overrides = {
     "KiiPushMessageBuilder": {
         "apnsAlert": {
             "parameters": {
-                "alert": "string | APNSAlert"
+                "alert": new AdHocTypes("string | APNSAlert", "string|APNSAlert")
             },
             "returnType": "KiiPushMessageBuilder"
         },
@@ -336,7 +656,7 @@ var overrides = {
         },
         "apnsData": {
             "parameters": {
-                "data": "{ [key: string]: string | number | boolean }"
+                "data": new AdHocTypes("{ [key: string]: string | number | boolean }", "?")
             },
             "returnType": "KiiPushMessageBuilder"
         },
@@ -360,7 +680,7 @@ var overrides = {
         },
         "gcmData": {
             "parameters": {
-                "data": "{ [key: string]: string }"
+                "data": new AdHocTypes("{ [key: string]: string }", "?")
             },
             "returnType": "KiiPushMessageBuilder"
         },
@@ -375,13 +695,13 @@ var overrides = {
         },
         "jpushData": {
             "parameters": {
-                "data": "{ [name: string]: string | number | boolean }"
+                "data": new AdHocTypes("{ [name: string]: string | number | boolean }", "?")
             },
             "returnType": "KiiPushMessageBuilder"
         },
         "mqttData": {
             "parameters": {
-                "data": "{ [key: string]: string }"
+                "data": new AdHocTypes("{ [key: string]: string }", "?")
             },
             "returnType": "KiiPushMessageBuilder"
         },
@@ -396,11 +716,11 @@ var overrides = {
         "isSubscribed": {
             "callbackParams": {
                 "success": {
-                    "topic": "T"
+                    "topic": new ReferencingType("target")
                 }
             },
             "parameters": {
-                "target": "T"
+                "target": new AdHocTypes("T", "+KiiBucket|+KiiTopic")
             },
             "typeParams": [
                 "T extends KiiBucket | KiiTopic"
@@ -409,11 +729,11 @@ var overrides = {
         "subscribe": {
             "callbackParams": {
                 "success": {
-                    "topic": "T"
+                    "topic": new ReferencingType("target")
                 }
             },
             "parameters": {
-                "target": "T"
+                "target": new AdHocTypes("T", "+KiiBucket|+KiiTopic")
             },
             "typeParams": [
                 "T extends KiiBucket | KiiTopic"
@@ -422,11 +742,11 @@ var overrides = {
         "unsubscribe": {
             "callbackParams": {
                 "success": {
-                    "topic": "T"
+                    "topic": new ReferencingType("target")
                 }
             },
             "parameters": {
-                "target": "T"
+                "target": new AdHocTypes("T", "+KiiBucket|+KiiTopic")
             },
             "typeParams": [
                 "T extends KiiBucket | KiiTopic"
@@ -450,14 +770,14 @@ var overrides = {
         "execute": {
             "callbackParams": {
                 "success": {
-                    "argument": "T"
+                    "argument": new ReferencingType("argument")
                 },
                 "failure": {
-                    "argument": "T"
+                    "argument": new ReferencingType("argument")
                 }
             },
             "parameters": {
-                "argument": "T"
+                "argument": new AdHocTypes("T", "?")
             },
             "typeParams": [
                 "T"
@@ -505,11 +825,11 @@ var overrides = {
         "isOwner": {
             "callbackParams": {
                 "success": {
-                    "user": "T"
+                    "user": new ReferencingType("owner")
                 }
             },
             "parameters": {
-                "owner": "T"
+                "owner": new AdHocTypes("T", "+KiiUser|+KiiGroup")
             },
             "typeParams": [
                 "T extends KiiUser | KiiGroup"
@@ -518,11 +838,11 @@ var overrides = {
         "registerOwner": {
             "callbackParams": {
                 "success": {
-                    "group": "T"
+                    "group": new ReferencingType("owner")
                 }
             },
             "parameters": {
-                "owner": "T"
+                "owner": new AdHocTypes("T", "+KiiUser|+KiiGroup")
             },
             "typeParams": [
                 "T extends KiiUser | KiiGroup"
@@ -531,11 +851,11 @@ var overrides = {
         "unregisterOwner": {
             "callbackParams": {
                 "success": {
-                    "group": "T"
+                    "group": new ReferencingType("owner")
                 }
             },
             "parameters": {
-                "owner": "T"
+                "owner": new AdHocTypes("T", "+KiiUser|+KiiGroup")
             },
             "typeParams": [
                 "T extends KiiUser | KiiGroup"
@@ -546,11 +866,11 @@ var overrides = {
         "sendMessage": {
             "callbackParams": {
                 "success": {
-                    "message": "T"
+                    "message": new ReferencingType("message")
                 }
             },
             "parameters": {
-                "message": "T"
+                "message": new AdHocTypes("T", "?")
             },
             "typeParams": [
                 "T"
@@ -562,7 +882,7 @@ var overrides = {
             "returnType": "KiiBucket"
         },
         "get": {
-            "returnType": "T",
+            "returnType": new AdHocTypes("T", "?"),
             "typeParams": [
                 "T"
             ]
@@ -571,7 +891,7 @@ var overrides = {
             "returnType": "{ access_token: string, expires_at: Date }"
         },
         "getLinkedSocialAccounts": {
-            "returnType": "{ [name: string]: KiiSocialAccountInfo }"
+            "returnType": new AdHocTypes("{ [name: string]: KiiSocialAccountInfo }", "?")
         },
         "loggedIn": {
             "returnType": "boolean"
@@ -579,12 +899,12 @@ var overrides = {
         "putIdentity": {
             "parameters": {
                 "password": "string",
-                "removeFields": "string[]"
+                "removeFields": new ArrayType("string")
             }
         },
         "update": {
             "parameters": {
-                "removeFields": "string[]"
+                "removeFields": new ArrayType("string")
             }
         },
         "userWithCredentials": {
@@ -723,82 +1043,108 @@ function fixCallbacksParameter(classSymbol, method) {
             param.name != "callbacks.failure";
     });
 
-    var callbackParam = method.params.find(function (param) {
+    var callbackParamIndex = method.params.findIndex(function (param) {
         return param.name == "callbacks";
     });
 
-    var overrides = lookupClassMemberOverrides(classSymbol, method);
-
-    /**
-     * extracts parameter names of a callback method from code examples.
-     */
-    function extractParams(pattern, callbackName) {
-        var params = [];
-
-        var overridesForCallback =
-                (overrides.callbackParams || {})[callbackName] || {};
-
-        for (var example of method.example) {
-            var match = example.desc.match(pattern);
-
-            if (!match || match[1] == "") {
-                continue;
-            }
-
-            params = match[1].split(/, */);
-            params = params.map(function (param) {
-                var type =
-                        overridesForCallback[param] ||
-                        callbackParamTypes[param];
-
-                if (typeof type == "function") {
-                    type = type(classSymbol, method, callbackName, params);
-                }
-
-                return {
-                    name: param,
-                    type: type
-                };
-            });
-        }
-
-        return params;
-    }
-
-    function formatParams(params) {
-        return params.map(function (param) {
-            return param.name + ": " + param.type;
-        }).join(", ");
-    }
+    var callbackParam =
+            (callbackParamIndex == -1)
+            ? null
+            : method.params[callbackParamIndex];
 
     if (callbackParam) {
         var successParams =
-                extractParams(/success: function\(([^)]*)\)/, "success");
+                extractParamsFromExamples(classSymbol, method, /success: function\(([^)]*)\)/, "success");
         var failureParams =
-                extractParams(/failure: function\(([^)]*)\)/, "failure");
-        var successParamsString = formatParams(successParams);
-        var failureParamsString = formatParams(failureParams);
+                extractParamsFromExamples(classSymbol, method, /failure: function\(([^)]*)\)/, "failure");
 
-        callbackParam.type =
-            "{ success(" + successParamsString + "): void;" +
-            " failure(" + failureParamsString + "): void; }";
+        callbackParam.type = new CallbackType(classSymbol.name, method.name, successParams, failureParams);
 
         callbackParam.isOptional = true;
 
-        if (successParams.length == 0) {
-            method.type = "Promise<void>";
-        } else if (successParams.length == 1) {
-            method.type = "Promise<" + successParams[0].type + ">";
-        } else {
-            var paramTypesString = successParams.map(function (param) {
-                return param.type;
-            }).join(", ");
-
-            method.type = "Promise<[" + paramTypesString + "]>";
-        }
+        method.type = PromiseType.apply(this, successParams.map(function (param) { return param.type; }));
     }
 
     return method;
+}
+
+/**
+ * extracts parameter names of a callback method from code examples.
+ */
+function extractParamsFromExamples(classSymbol, method, pattern, callbackName) {
+    var params = [];
+
+    var overrides = lookupClassMemberOverrides(classSymbol, method);
+
+    var overridesForCallback =
+            (overrides.callbackParams || {})[callbackName] || {};
+
+    for (var example of method.example) {
+        var match = example.desc.match(pattern);
+
+        if (!match || match[1] == "") {
+            continue;
+        }
+
+        params = match[1].split(/, */);
+        params = params.map(function (param) {
+            var type =
+                    overridesForCallback[param] ||
+                    callbackParamTypes[param];
+
+            if (typeof type == "function") {
+                type = type(classSymbol, method, callbackName, params);
+            }
+
+            return {
+                name: param,
+                type: type
+            };
+        });
+    }
+
+    return params;
+}
+
+/**
+ * adds "call" effects to method effect for Tern.
+ */
+function addTernEffectsForCallbacks(classSymbol, method) {
+    var callbackParamIndex = method.params.findIndex(function (param) {
+        return param.name == "callbacks";
+    });
+
+    var callbackParam =
+            (callbackParamIndex == -1)
+            ? null
+            : method.params[callbackParamIndex];
+
+    if (callbackParam) {
+        var successParams =
+                extractParamsFromExamples(classSymbol, method, /success: function\(([^)]*)\)/, "success");
+        var failureParams =
+                extractParamsFromExamples(classSymbol, method, /failure: function\(([^)]*)\)/, "failure");
+
+        method.ternEffects = method.ternEffects || [];
+
+        var getCallEffectType = function (param) {
+            if (typeof param.type.resolvedParameterIndex === "number") {
+                return "!" + param.type.resolvedParameterIndex;
+            } else {
+                return formatTernType(param.type);
+            }
+        };
+
+        var successCallEffectArguments = successParams.map(getCallEffectType);
+        var failureCallEffectArguments = failureParams.map(getCallEffectType);
+
+        method.ternEffects.push(
+            "call !" + callbackParamIndex + ".success " + successCallEffectArguments.join(" ")
+        );
+        method.ternEffects.push(
+            "call !" + callbackParamIndex + ".failure " + failureCallEffectArguments.join(" ")
+        );
+    }
 }
 
 /**
@@ -851,11 +1197,11 @@ function overrideMethodParamTypes(classSymbol, method) {
     var overrides = lookupClassMemberOverrides(classSymbol, method);
 
     if (overrides.parameters) {
-        for (var param of method.params) {
+        method.params.forEach(function (param) {
             if (overrides.parameters[param.name]) {
                 param.type = overrides.parameters[param.name];
             }
-        }
+        });
     }
 
     return method;
@@ -886,6 +1232,19 @@ function overrideVariadicParams(classSymbol, method) {
                 param.isVariadic = true;
             }
         }
+    }
+
+    return method;
+}
+
+/**
+ * overrides the `ternEffects` of the given method.
+ */
+function overrideTernEffects(classSymbol, method) {
+    var overrides = lookupClassMemberOverrides(classSymbol, method);
+
+    if (overrides.ternEffects) {
+        method.ternEffects = overrides.ternEffects;
     }
 
     return method;
@@ -932,8 +1291,7 @@ function fixIdentityData(method) {
         return !param.name.match(/^identityData\./);
     });
 
-    identityDataParam.type =
-        "{ emailAddress?: string, phoneNumber?: string, username?: string }";
+    identityDataParam.type = "identityData";
 
     return method;
 }
@@ -1131,6 +1489,13 @@ function format(classes) {
     output.push('  }\n');
     output.push('\n');
 
+    output.push('  interface identityData {\n');
+    output.push('    emailAddress?: string;\n');
+    output.push('    phoneNumber?: string;\n');
+    output.push('    username?: string;\n');
+    output.push('  }\n');
+    output.push('\n');
+
     classes.forEach(function (classSymbol) {
         formatClass(classSymbol, output);
         output.push("\n");
@@ -1315,4 +1680,152 @@ function formatParam(param, output) {
 
     output.push(": ");
     output.push(param.type || "any");
+}
+
+
+var ternTypeAliases = {
+    "KiiSocialConnectOptions": "tokenConnectOptions | oauthConnectOptions",
+    tokenConnectOptions: {
+        "access_token": "string",
+        "openID?": "string"
+    },
+    oauthConnectOptions: {
+        "oauth_token": "string",
+        "oauth_token_secret": "string"
+    },
+
+    "KiiSocialAccountInfo": {
+        "createdAt": "number",
+        "provider": "KiiSocialNetworkName",
+        "socialAccountId": "string"
+    },
+
+    "KiiThingFields": {
+        "_vendorThingID": "string",
+        "_password": "string",
+        "_thingType?": "string",
+        "_vendor?": "string",
+        "_firmwareVersion?": "string",
+        "_lot?": "string",
+        "_stringField1?": "string",
+        "_stringField2?": "string",
+        "_stringField3?": "string",
+        "_stringField4?": "string",
+        "_stringField5?": "string",
+        "_numberField1?": "number",
+        "_numberField2?": "number",
+        "_numberField3?": "number",
+        "_numberField4?": "number",
+        "_numberField5?": "number"
+    },
+
+    "KiiACLSubject": "KiiGroup | KiiUser | KiiAnyAuthenticatedUser | KiiAnonymousUser | KiiThing",
+
+    "APNSAlert": {
+        "title": "string",
+        "body": "string",
+        "title-loc-key": "string",
+        "title-loc-args": "[string]",
+        "action-loc-key": "string",
+        "loc-key": "string",
+        "loc-args": "[string]",
+        "launch-image": "string"
+    },
+
+    "identityData": {
+        "emailAddress?": "string",
+        "phoneNumber?": "string",
+        "username?": "string"
+    }
+};
+
+/**
+ * builds tern JSON type definitions.
+ */
+function buildTernJSONTypeDefinitions(classes) {
+    var typeDefinitions = {
+        "!name": "KiiCloud",
+
+        "!define": ternTypeAliases,
+
+        "KiiACLAction": {
+            "KiiACLBucketActionCreateObjects": "+KiiACLAction",
+            "KiiACLBucketActionQueryObjects": "+KiiACLAction",
+            "KiiACLBucketActionDropBucket": "+KiiACLAction",
+            "KiiACLObjectActionRead": "+KiiACLAction",
+            "KiiACLObjectActionWrite": "+KiiACLAction"
+        },
+
+        "KiiSite": {
+            "US": "+KiiSite",
+            "JP": "+KiiSite",
+            "CN": "+KiiSite",
+            "SG": "+KiiSite",
+            "CN3": "+KiiSite"
+        },
+
+        "KiiAnalyticsSite": {
+            "US": "+KiiAnalyticsSite",
+            "JP": "+KiiAnalyticsSite",
+            "CN": "+KiiAnalyticsSite",
+            "SG": "+KiiAnalyticsSite",
+            "CN3": "+KiiAnalyticsSite"
+        },
+
+        "KiiSocialNetworkName": {
+            "FACEBOOK": "number",
+            "TWITTER": "number",
+            "QQ": "number",
+            "GOOGLEPLUS": "number",
+            "RENREN": "number"
+        }
+    };
+
+    classes.forEach(function (classSymbol) {
+        typeDefinitions[classSymbol.name] = typeDefinitions[classSymbol.name] || {};
+        typeDefinitions[classSymbol.name].prototype = typeDefinitions[classSymbol.name].prototype || {};
+
+        classSymbol.properties.forEach(function (property) {
+            typeDefinitions[classSymbol.name][property.name] =
+                formatTernType(property.ternReturnType || property.type || "?");
+        });
+
+        classSymbol.methods.forEach(function (method) {
+            if (classSymbol.name == method.name) {
+                typeDefinitions[classSymbol.name]["!type"] =
+                    formatTernMethodType(classSymbol, method);
+            } else if (method.isStatic) {
+                typeDefinitions[classSymbol.name][method.name] =
+                    formatTernMethodType(classSymbol, method);
+            } else {
+                typeDefinitions[classSymbol.name].prototype[method.name] =
+                    formatTernMethodType(classSymbol, method);
+            }
+        });
+    });
+
+    return typeDefinitions;
+}
+
+function formatTernMethodType(classSymbol, method) {
+    var type = "fn(";
+
+    type += method.params.map(function (param) {
+        return param.name + (param.isOptional ? "?" : "") + ": " + formatTernType(param.type || "?");
+    }).join(", ");
+
+    type += ")";
+
+    if (method.type) {
+        type += " -> " + formatTernType(method.type);
+    }
+
+    if (method.ternEffects) {
+        return {
+            "!type": type,
+            "!effects": method.ternEffects
+        };
+    } else {
+        return type;
+    }
 }

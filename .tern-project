@@ -1,0 +1,6 @@
+{
+  "libs": [
+    "browser",
+    "libs/tern/defs/kii"
+  ]
+}
