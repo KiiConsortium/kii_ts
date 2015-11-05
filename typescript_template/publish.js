@@ -435,18 +435,23 @@ var callbackParamTypes = {
 var overrides = {
     "Kii": {
         "encryptedBucketWithName": {
+            // declared to return KiiEncryptedBucket, but KiiEncryptedBucket
+            // is not exported.
             "returnType": "KiiBucket"
         },
         "getAccessTokenExpiration": {
+            // missing @return
             "returnType": "number"
         },
         "groupWithNameAndMembers": {
             "parameters": {
+                // declared to return Array, adds a type argument
                 "members": new ArrayType("KiiUser")
             }
         },
         "setAccessTokenExpiration": {
             "parameters": {
+                // missing type annotation in @param
                 "expiresIn": "number"
             }
         }
@@ -454,11 +459,15 @@ var overrides = {
     "KiiACLEntry": {
         "entryWithSubject": {
             "parameters": {
+                // applies a type alias
+                // FIXME: Subject → subject
                 "Subject": "KiiACLSubject"
             },
+            // missing type annotation in @return
             "returnType": "KiiACLEntry"
         },
         "getSubject": {
+            // enriches type using type parameter
             "returnType": new AdHocTypes("T", "KiiACLSubject"),
             "typeParams": [
                 "T extends KiiACLSubject"
@@ -466,6 +475,7 @@ var overrides = {
         },
         "setSubject": {
             "parameters": {
+                // applies a type alias
                 "subject": "KiiACLSubject"
             }
         }
@@ -473,66 +483,82 @@ var overrides = {
     "KiiAnalytics": {
         "initialize": {
             "parameters": {
+                // missing type annotation in @param
                 "deviceid": "string"
             }
         },
         "initializeWithSite": {
             "parameters": {
+                // missing type annotation in @param
                 "deviceid": "string"
             }
         },
         "trackEvent": {
+            // missing @return
             "returnType": new PromiseType()
         },
         "trackEventWithExtras": {
+            // missing @return
             "returnType": new PromiseType()
         },
         "trackEventWithExtrasAndCallbacks": {
             "parameters": {
+                // missing @example, we cannot guess parameters
                 "callbacks": new CallbackType("KiiAnalytics", "trackEventWithExtrasAndCallbacks", [], [{"name": "error", "type": "Error"}])
             }
         }
     },
     "KiiAnonymousUser": {
         "getID": {
+            // missing @return
             "returnType": "string"
         }
     },
     "KiiAnyAuthenticatedUser": {
         "getID": {
+            // missing @return
             "returnType": "string"
         }
     },
     "KiiAppAdminContext": {
         "findUserByEmail": {
             "parameters": {
+                // failed to guess callback parameters
                 "callbacks": new CallbackType("KiiAppAdminContext", "findUserByEmail", [{"name": "adminContext", type: "KiiAppAdminContext"}, {"name": "theMatchedUser", type: "KiiUser"}], [{"name": "adminContext", type: "KiiAppAdminContext"}, {"name": "anErrorString", type: "string"}])
             },
+            // declared to return Promise, adds type argument
             "returnType": new PromiseType("KiiAppAdminContext", "KiiUser")
         },
         "findUserByPhone": {
             "parameters": {
+                // failed to guess callback parameters
                 "callbacks": new CallbackType("KiiAppAdminContext", "findUserByPhone", [{"name": "adminContext", type: "KiiAppAdminContext"}, {"name": "theMatchedUser", type: "KiiUser"}], [{"name": "adminContext", type: "KiiAppAdminContext"}, {"name": "anErrorString", type: "string"}])
             },
+            // declared to return Promise, adds type argument
             "returnType": new PromiseType("KiiAppAdminContext", "KiiUser")
         },
         "findUserByUsername": {
             "parameters": {
+                // failed to guess callback parameters
                 "callbacks": new CallbackType("KiiAppAdminContext", "findUserByUsername", [{"name": "adminContext", type: "KiiAppAdminContext"}, {"name": "theMatchedUser", type: "KiiUser"}], [{"name": "adminContext", type: "KiiAppAdminContext"}, {"name": "anErrorString", type: "string"}])
             },
+            // declared to return Promise, adds type argument
             "returnType": new PromiseType("KiiAppAdminContext", "KiiUser")
         },
         "registerThing": {
             "parameters": {
+                // declared as Object
                 "fields": "KiiThingFields"
             }
         }
     },
     "KiiBucket": {
         "createObjectWithType": {
+            // missing type annotation in @return
             "returnType": "KiiObject"
         },
         "executeQuery": {
+            // enriches type using type parameter
             "callbackParams": {
                 "success": {
                     "resultSet": new ArrayType(new AdHocTypes("T", "?"))
@@ -545,95 +571,120 @@ var overrides = {
     },
     "KiiClause": {
         "and": {
+            // declared as List, declares as a variadic parameter
             "parameters": {
                 "A": new ArrayType("KiiClause")
             },
-            "returnType": "KiiClause",
             "variadicParams": [
                 "A"
-            ]
+            ],
+            // missing @return
+            "returnType": "KiiClause"
         },
         "equals": {
+            // missing @return
             "returnType": "KiiClause"
         },
         "greaterThan": {
+            // missing @return
             "returnType": "KiiClause"
         },
         "greaterThanOrEqual": {
+            // missing @return
             "returnType": "KiiClause"
         },
         "inClause": {
             "parameters": {
+                // declared to return Array
                 "values": new ArrayType("any")
             },
+            // missing @return
             "returnType": "KiiClause"
         },
         "lessThan": {
+            // missing @return
             "returnType": "KiiClause"
         },
         "lessThanOrEqual": {
+            // missing @return
             "returnType": "KiiClause"
         },
         "notEquals": {
+            // missing @return
             "returnType": "KiiClause"
         },
         "or": {
+            // declared as List, declares as a variadic parameter
             "parameters": {
                 "A": new ArrayType("KiiClause")
             },
-            "returnType": "KiiClause",
             "variadicParams": [
                 "A"
-            ]
+            ],
+            // missing @return
+            "returnType": "KiiClause"
         },
         "startsWith": {
+            // missing @return
             "returnType": "KiiClause"
         }
     },
     "KiiGeoPoint": {
         "getLatitude": {
+            // missing @return
             "returnType": "number"
         },
         "getLongitude": {
+            // missing @return
             "returnType": "number"
         }
     },
     "KiiGroup": {
         "encryptedBucketWithName": {
+            // declared to return KiiEncryptedBucket, but KiiEncryptedBucket
+            // is not exported.
             "returnType": "KiiBucket"
         },
         "groupWithID": {
             "parameters": {
+                // missing type annotation in @param
                 "groupId": "string"
             },
+            // missing type annotation in @return
             "returnType": "KiiGroup"
         },
         "groupWithNameAndMembers": {
             "parameters": {
+                // declared as Array, adds a type argument
                 "members": new ArrayType("KiiUser")
             }
         }
     },
     "KiiObject": {
         "get": {
+            // enriches type using type parameter
             "returnType": new AdHocTypes("T", "?"),
             "typeParams": [
                 "T"
             ]
         },
         "getCreated": {
+            // declared to return String, but seems to return number
             "returnType": "number"
         },
         "isValidObjectID": {
+            // missing type annotation in @return
             "returnType": "boolean"
         },
         "save": {
             "parameters": {
+                // missing type annotation in @param
                 "overwrite": "boolean"
             }
         },
         "saveAllFields": {
             "parameters": {
+                // missing type annotation in @param
                 "overwrite": "boolean"
             }
         }
@@ -641,79 +692,104 @@ var overrides = {
     "KiiPushMessageBuilder": {
         "apnsAlert": {
             "parameters": {
+                // declared as Object
                 "alert": new AdHocTypes("string | APNSAlert", "string|APNSAlert")
             },
+            // declared to return Object
             "returnType": "KiiPushMessageBuilder"
         },
         "apnsBadge": {
+            // declared to return Object
             "returnType": "KiiPushMessageBuilder"
         },
         "apnsCategory": {
+            // declared to return Object
             "returnType": "KiiPushMessageBuilder"
         },
         "apnsContentAvailable": {
+            // declared to return Object
             "returnType": "KiiPushMessageBuilder"
         },
         "apnsData": {
             "parameters": {
+                // declared as Object
                 "data": new AdHocTypes("{ [key: string]: string | number | boolean }", "?")
             },
+            // declared to return Object
             "returnType": "KiiPushMessageBuilder"
         },
         "apnsSound": {
+            // declared to return Object
             "returnType": "KiiPushMessageBuilder"
         },
         "enableApns": {
+            // declared to return Object
             "returnType": "KiiPushMessageBuilder"
         },
         "enableGcm": {
+            // declared to return Object
             "returnType": "KiiPushMessageBuilder"
         },
         "enableJpush": {
+            // declared to return Object
             "returnType": "KiiPushMessageBuilder"
         },
         "enableMqtt": {
+            // declared to return Object
             "returnType": "KiiPushMessageBuilder"
         },
         "gcmCollapseKey": {
+            // declared to return Object
             "returnType": "KiiPushMessageBuilder"
         },
         "gcmData": {
             "parameters": {
+                // declared as Object
                 "data": new AdHocTypes("{ [key: string]: string }", "?")
             },
+            // declared to return Object
             "returnType": "KiiPushMessageBuilder"
         },
         "gcmDelayWhileIdle": {
+            // declared to return Object
             "returnType": "KiiPushMessageBuilder"
         },
         "gcmRestrictedPackageName": {
+            // declared to return Object
             "returnType": "KiiPushMessageBuilder"
         },
         "gcmTimeToLive": {
+            // declared to return Object
             "returnType": "KiiPushMessageBuilder"
         },
         "jpushData": {
             "parameters": {
+                // declared as Object
                 "data": new AdHocTypes("{ [name: string]: string | number | boolean }", "?")
             },
+            // declared to return Object
             "returnType": "KiiPushMessageBuilder"
         },
         "mqttData": {
             "parameters": {
+                // declared as Object
                 "data": new AdHocTypes("{ [key: string]: string }", "?")
             },
+            // declared to return Object
             "returnType": "KiiPushMessageBuilder"
         },
         "setSendToDevelopment": {
+            // declared to return Object
             "returnType": "KiiPushMessageBuilder"
         },
         "setSendToProduction": {
+            // declared to return Object
             "returnType": "KiiPushMessageBuilder"
         }
     },
     "KiiPushSubscription": {
         "isSubscribed": {
+            // enriches type using type parameter
             "callbackParams": {
                 "success": {
                     "topic": new ReferencingType("target")
@@ -727,6 +803,7 @@ var overrides = {
             ]
         },
         "subscribe": {
+            // enriches type using type parameter
             "callbackParams": {
                 "success": {
                     "topic": new ReferencingType("target")
@@ -740,6 +817,7 @@ var overrides = {
             ]
         },
         "unsubscribe": {
+            // enriches type using type parameter
             "callbackParams": {
                 "success": {
                     "topic": new ReferencingType("target")
@@ -756,18 +834,22 @@ var overrides = {
     "KiiQuery": {
         "queryWithClause": {
             "parameters": {
+                // missing type annotation in @param
                 "clause": "KiiClause"
             },
+            // missing @return
             "returnType": "KiiQuery"
         },
         "setLimit": {
             "parameters": {
+                // missing type annotation in @param
                 "value": "number"
             }
         }
     },
     "KiiServerCodeEntry": {
         "execute": {
+            // enriches type using type parameter
             "callbackParams": {
                 "success": {
                     "argument": new ReferencingType("argument")
@@ -787,42 +869,50 @@ var overrides = {
     "KiiSocialConnect": {
         "getAccessTokenExpirationForNetwork": {
             "parameters": {
+                // missing type annotation in @param
                 "networkName": "KiiSocialNetworkName"
             }
         },
         "getAccessTokenForNetwork": {
             "parameters": {
+                // missing type annotation in @param
                 "networkName": "KiiSocialNetworkName"
             }
         },
         "getAccessTokenObjectForNetwork": {
             "parameters": {
+                // missing type annotation in @param
                 "networkName": "KiiSocialNetworkName"
             }
         },
         "linkCurrentUserWithNetwork": {
             "parameters": {
+                // missing type annotation in @param
                 "networkName": "KiiSocialNetworkName",
                 "options": "KiiSocialConnectOptions"
             }
         },
         "logIn": {
             "parameters": {
+                // missing type annotation in @param
                 "networkName": "KiiSocialNetworkName",
                 "options": "KiiSocialConnectOptions"
             }
         },
         "unLinkCurrentUserFromNetwork": {
             "parameters": {
+                // missing type annotation in @param
                 "networkName": "KiiSocialNetworkName"
             }
         }
     },
     "KiiThing": {
         "fields": {
+            // declared as Object
             "returnType": "KiiThingFields"
         },
         "isOwner": {
+            // enriches type using type parameter
             "callbackParams": {
                 "success": {
                     "user": new ReferencingType("owner")
@@ -836,6 +926,7 @@ var overrides = {
             ]
         },
         "registerOwner": {
+            // enriches type using type parameter
             "callbackParams": {
                 "success": {
                     "group": new ReferencingType("owner")
@@ -849,6 +940,7 @@ var overrides = {
             ]
         },
         "unregisterOwner": {
+            // enriches type using type parameter
             "callbackParams": {
                 "success": {
                     "group": new ReferencingType("owner")
@@ -864,6 +956,7 @@ var overrides = {
     },
     "KiiTopic": {
         "sendMessage": {
+            // enriches type using type parameter
             "callbackParams": {
                 "success": {
                     "message": new ReferencingType("message")
@@ -878,93 +971,118 @@ var overrides = {
         }
     },
     "KiiUser": {
+        // declared to return KiiEncryptedBucket, but KiiEncryptedBucket
+        // is not exported.
         "encryptedBucketWithName": {
             "returnType": "KiiBucket"
         },
         "get": {
+            // enriches type using type parameter
             "returnType": new AdHocTypes("T", "?"),
             "typeParams": [
                 "T"
             ]
         },
         "getAccessTokenObject": {
+            // declared to return Object
             "returnType": "{ access_token: string, expires_at: Date }"
         },
         "getLinkedSocialAccounts": {
+            // declared to return Object
             "returnType": new AdHocTypes("{ [name: string]: KiiSocialAccountInfo }", "?")
         },
         "loggedIn": {
+            // missing @return
             "returnType": "boolean"
         },
         "putIdentity": {
             "parameters": {
+                // missing type annotation in @param
                 "password": "string",
+                // declared as Array, adds a type argument
                 "removeFields": new ArrayType("string")
             }
         },
         "update": {
             "parameters": {
+                // declared as Array, adds a type argument
                 "removeFields": new ArrayType("string")
             }
         },
         "userWithCredentials": {
             "parameters": {
+                // missing type annotation in @param
                 "emailAddress": "string",
                 "password": "string",
                 "phoneNumber": "string",
                 "username": "string"
             },
+            // missing type annotation in @return
             "returnType": "KiiUser"
         },
         "userWithEmailAddress": {
             "parameters": {
+                // missing type annotation in @param
                 "emailAddress": "string",
                 "password": "string"
             },
+            // missing type annotation in @return
             "returnType": "KiiUser"
         },
         "userWithEmailAddressAndPhoneNumber": {
             "parameters": {
+                // missing type annotation in @param
                 "emailAddress": "string",
                 "password": "string",
                 "phoneNumber": "string"
             },
+            // missing type annotation in @return
             "returnType": "KiiUser"
         },
         "userWithEmailAddressAndUsername": {
             "parameters": {
+                // missing type annotation in @param
                 "emailAddress": "string",
                 "password": "string",
                 "username": "string"
             },
+            // missing type annotation in @return
             "returnType": "KiiUser"
         },
         "userWithID": {
             "parameters": {
+                // missing type annotation in @param
                 "userID": "string"
             },
+            // missing type annotation in @return
             "returnType": "KiiUser"
         },
         "userWithPhoneNumber": {
             "parameters": {
+                // missing type annotation in @param
                 "password": "string",
                 "phoneNumber": "string"
             },
+            // missing type annotation in @return
             "returnType": "KiiUser"
         },
         "userWithPhoneNumberAndUsername": {
             "parameters": {
+                // missing type annotation in @param
                 "password": "string",
                 "phoneNumber": "string",
                 "username": "string"
             },
+            // missing type annotation in @return
             "returnType": "KiiUser"
         },
         "userWithUsername": {
             "parameters": {
+                // missing type annotation in @param
                 "password": "string",
                 "username": "string"
             },
+            // missing type annotation in @return
             "returnType": "KiiUser"
         }
     }
