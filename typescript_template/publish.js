@@ -545,6 +545,34 @@ var overrides = {
             // declared to return Promise, adds type argument
             "returnType": new PromiseType("KiiAppAdminContext", "KiiUser")
         },
+        "registerOwnerWithThingID": {
+            // enriches type using type parameter
+            "callbackParams": {
+                "success": {
+                    "group": new ReferencingType("owner")
+                }
+            },
+            "parameters": {
+                "owner": new AdHocTypes("T", "+KiiUser|+KiiGroup")
+            },
+            "typeParams": [
+                "T extends KiiUser | KiiGroup"
+            ]
+        },
+        "registerOwnerWithVendorThingID": {
+            // enriches type using type parameter
+            "callbackParams": {
+                "success": {
+                    "group": new ReferencingType("owner")
+                }
+            },
+            "parameters": {
+                "owner": new AdHocTypes("T", "+KiiUser|+KiiGroup")
+            },
+            "typeParams": [
+                "T extends KiiUser | KiiGroup"
+            ]
+        },
         "registerThing": {
             "parameters": {
                 // declared as Object
@@ -911,6 +939,11 @@ var overrides = {
             // declared as Object
             "returnType": "KiiThingFields"
         },
+        "encryptedBucketWithName": {
+            // declared to return KiiEncryptedBucket, but KiiEncryptedBucket
+            // is not exported.
+            "returnType": "KiiBucket"
+        },
         "isOwner": {
             // enriches type using type parameter
             "callbackParams": {
@@ -926,6 +959,34 @@ var overrides = {
             ]
         },
         "registerOwner": {
+            // enriches type using type parameter
+            "callbackParams": {
+                "success": {
+                    "group": new ReferencingType("owner")
+                }
+            },
+            "parameters": {
+                "owner": new AdHocTypes("T", "+KiiUser|+KiiGroup")
+            },
+            "typeParams": [
+                "T extends KiiUser | KiiGroup"
+            ]
+        },
+        "registerOwnerWithThingID": {
+            // enriches type using type parameter
+            "callbackParams": {
+                "success": {
+                    "group": new ReferencingType("owner")
+                }
+            },
+            "parameters": {
+                "owner": new AdHocTypes("T", "+KiiUser|+KiiGroup")
+            },
+            "typeParams": [
+                "T extends KiiUser | KiiGroup"
+            ]
+        },
+        "registerOwnerWithVendorThingID": {
             // enriches type using type parameter
             "callbackParams": {
                 "success": {

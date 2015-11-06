@@ -1,4 +1,4 @@
-SOURCE=html5-cloud-sdk-v2.2.2.js
+SOURCE=html5-cloud-sdk-v2.3.0.js
 
 libs/tern/defs/kii.json: typings/kii/kii.d.ts
 	mkdir -p typings/kii/
