@@ -1,3 +1,7 @@
+// Copyright © 2015 Kii Consortium.
+// JsDoc Toolkit is Copyright (c)2009 Michael Mathews <micmath@gmail.com>
+// MIT Licensed, see LICENSE.md for details.
+
 // Derived from JsDoc Toolkit default template.
 
 /**

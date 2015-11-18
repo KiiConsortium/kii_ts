@@ -1,3 +1,6 @@
+# Copyright © 2015 Kii Consortium.
+# MIT Licensed, see LICENSE.md for details.
+
 set -eu
 
 if (( $# < 1 ))

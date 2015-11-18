@@ -51,3 +51,7 @@ Brackets|Brackets-Ternific
 Atom|atom-ternjs
 
 Notes on Brackets-Ternific: Brackets-Ternific searches type definitions from plugin directory, not from the project directory, so that you have to copy kii-cloud-sdk.json to ~/Library/Application Support/Brackets/extensions/user/ternific/libs/tern/defs/ (for OS X).
+
+## License
+
+MIT License. See LICENSE.md for details.
