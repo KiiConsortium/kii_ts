@@ -3,7 +3,7 @@
 /**
  * The entry point.
  *
- * generates the kii.d.ts.
+ * generates the kii-cloud-sdk.d.ts.
  */
 function publish(symbolSet) {
     function isaClass($) {
@@ -51,7 +51,7 @@ function publish(symbolSet) {
 
         var outDir = JSDOC.opt.d || SYS.pwd + "../out/jsdoc/";
 
-        IO.saveFile(outDir, "kii.d.ts", outputText);
+        IO.saveFile(outDir, "kii-cloud-sdk.d.ts", outputText);
 
         // output type definitions for Tern
 
@@ -66,7 +66,7 @@ function publish(symbolSet) {
             });
         });
 
-        IO.saveFile(outDir, "kii.json",
+        IO.saveFile(outDir, "kii-cloud-sdk.json",
                     JSON.stringify(buildTernJSONTypeDefinitions(classes),
                                    null,
                                    2));
@@ -201,7 +201,7 @@ PromiseType.prototype.resolveReferencingType = function(method) {
 /**
  * The type of callback functions.
  *
- * { success(t1, t2, ...) -> void; failure(s1, s2, ...) -> void } for TypeScript.
+ * { success(t1, t2, ...): any; failure(s1, s2, ...): any } for TypeScript.
  * { success: fn(t1, t2, ...); failure: fn(s1, s2, ...) } for Tern.
  */
 function CallbackType(className, methodName, successParams, failureParams) {
@@ -230,7 +230,7 @@ CallbackType.prototype.toString = function() {
     var successParamsString = formatParams(this.successParams);
     var failureParamsString = formatParams(this.failureParams);
 
-    return "{ success(" + successParamsString + "): void; failure(" + failureParamsString + "): void; }";
+    return "{ success(" + successParamsString + "): any; failure(" + failureParamsString + "): any; }";
 };
 
 /**
@@ -1498,9 +1498,10 @@ function fixOptionalParameters(method) {
 function format(classes) {
     var output = [];
 
-    output.push("// Type definitions for Kii Cloud SDK\n");
+    output.push("// Type definitions for Kii Cloud SDK " + (process.env.KII_VERSION || "") + "\n");
     output.push("// Project: http://en.kii.com/\n");
     output.push("// Definitions by: Kii Consortium <http://jp.kii.com/consortium/>\n");
+    output.push("// Definitions: https://github.com/borisyankov/DefinitelyTyped\n");
     output.push("\n");
 
     output.push("/// <reference path='../es6-promise/es6-promise.d.ts' />\n");
@@ -1508,171 +1509,171 @@ function format(classes) {
 
     output.push("declare module KiiCloud {\n");
 
-    output.push("  enum KiiACLAction {\n");
-    output.push("    KiiACLBucketActionCreateObjects,\n");
-    output.push("    KiiACLBucketActionQueryObjects,\n");
-    output.push("    KiiACLBucketActionDropBucket,\n");
-    output.push("    KiiACLObjectActionRead,\n");
-    output.push("    KiiACLObjectActionWrite,\n");
-    output.push("  }\n");
+    output.push("    enum KiiACLAction {\n");
+    output.push("        KiiACLBucketActionCreateObjects,\n");
+    output.push("        KiiACLBucketActionQueryObjects,\n");
+    output.push("        KiiACLBucketActionDropBucket,\n");
+    output.push("        KiiACLObjectActionRead,\n");
+    output.push("        KiiACLObjectActionWrite,\n");
+    output.push("    }\n");
     output.push("\n");
 
-    output.push("  export enum KiiSite {\n");
-    output.push("    US,\n");
-    output.push("    JP,\n");
-    output.push("    CN,\n");
-    output.push("    SG,\n");
-    output.push("    CN3\n");
-    output.push("  }\n");
+    output.push("    export enum KiiSite {\n");
+    output.push("        US,\n");
+    output.push("        JP,\n");
+    output.push("        CN,\n");
+    output.push("        SG,\n");
+    output.push("        CN3\n");
+    output.push("    }\n");
     output.push("\n");
 
-    output.push("  export enum KiiAnalyticsSite {\n");
-    output.push("    US,\n");
-    output.push("    JP,\n");
-    output.push("    CN,\n");
-    output.push("    SG,\n");
-    output.push("    CN3\n");
-    output.push("  }\n");
+    output.push("    export enum KiiAnalyticsSite {\n");
+    output.push("        US,\n");
+    output.push("        JP,\n");
+    output.push("        CN,\n");
+    output.push("        SG,\n");
+    output.push("        CN3\n");
+    output.push("    }\n");
     output.push("\n");
 
-    output.push("  enum KiiSocialNetworkName {\n");
-    output.push("    FACEBOOK = 1,\n");
-    output.push("    TWITTER = 2,\n");
-    output.push("    QQ = 3,\n");
-    output.push("    GOOGLEPLUS = 4,\n");
-    output.push("    RENREN = 5\n");
-    output.push("  }\n");
+    output.push("    enum KiiSocialNetworkName {\n");
+    output.push("        FACEBOOK = 1,\n");
+    output.push("        TWITTER = 2,\n");
+    output.push("        QQ = 3,\n");
+    output.push("        GOOGLEPLUS = 4,\n");
+    output.push("        RENREN = 5\n");
+    output.push("    }\n");
     output.push("\n");
 
-    output.push("  type KiiSocialConnectOptions = {\n");
-    output.push("      access_token: string,\n");
-    output.push("      openID?: string\n");
-    output.push("  } | {\n");
-    output.push("      oauth_token: string,\n");
-    output.push("      oauth_token_secret: string\n");
-    output.push("  }\n");
+    output.push("    type KiiSocialConnectOptions = {\n");
+    output.push("        access_token: string,\n");
+    output.push("        openID?: string\n");
+    output.push("    } | {\n");
+    output.push("        oauth_token: string,\n");
+    output.push("        oauth_token_secret: string\n");
+    output.push("    }\n");
     output.push("\n");
 
-    output.push("  interface KiiSocialAccountInfo {\n");
-    output.push("    createdAt: number;\n");
-    output.push("    provider: KiiSocialNetworkName;\n");
-    output.push("    socialAccountId: string;\n");
-    output.push("  }\n");
+    output.push("    interface KiiSocialAccountInfo {\n");
+    output.push("        createdAt: number;\n");
+    output.push("        provider: KiiSocialNetworkName;\n");
+    output.push("        socialAccountId: string;\n");
+    output.push("    }\n");
     output.push("\n");
 
-    output.push("  interface KiiThingFields {\n");
-    output.push("    /**\n");
-    output.push("     * thing identifier given by thing vendor.\n");
-    output.push("     */\n");
-    output.push("    _vendorThingID: string;\n");
+    output.push("    interface KiiThingFields {\n");
+    output.push("        /**\n");
+    output.push("         * thing identifier given by thing vendor.\n");
+    output.push("         */\n");
+    output.push("        _vendorThingID: string;\n");
     output.push("\n");
-    output.push("    /**\n");
-    output.push("     * thing password given by thing vendor.\n");
-    output.push("     */\n");
-    output.push("    _password: string;\n");
+    output.push("        /**\n");
+    output.push("         * thing password given by thing vendor.\n");
+    output.push("         */\n");
+    output.push("        _password: string;\n");
     output.push("\n");
-    output.push("    /**\n");
-    output.push("     * thing type given by thing vendor.\n");
-    output.push("     */\n");
-    output.push("    _thingType?: string;\n");
+    output.push("        /**\n");
+    output.push("         * thing type given by thing vendor.\n");
+    output.push("         */\n");
+    output.push("        _thingType?: string;\n");
     output.push("\n");
-    output.push("    /**\n");
-    output.push("     * vendor identifier given by thing vendor.\n");
-    output.push("     */\n");
-    output.push("    _vendor?: string;\n");
+    output.push("        /**\n");
+    output.push("         * vendor identifier given by thing vendor.\n");
+    output.push("         */\n");
+    output.push("        _vendor?: string;\n");
     output.push("\n");
-    output.push("    /**\n");
-    output.push("     * firmware version given by thing vendor.\n");
-    output.push("     */\n");
-    output.push("    _firmwareVersion?: string;\n");
+    output.push("        /**\n");
+    output.push("         * firmware version given by thing vendor.\n");
+    output.push("         */\n");
+    output.push("        _firmwareVersion?: string;\n");
     output.push("\n");
-    output.push("    /**\n");
-    output.push("     * lot identifier given by thing vendor.\n");
-    output.push("     */\n");
-    output.push("    _lot?: string;\n");
+    output.push("        /**\n");
+    output.push("         * lot identifier given by thing vendor.\n");
+    output.push("         */\n");
+    output.push("        _lot?: string;\n");
     output.push("\n");
-    output.push("    /**\n");
-    output.push("     * arbitrary string field.\n");
-    output.push("     */\n");
-    output.push("    _stringField1?: string;\n");
+    output.push("        /**\n");
+    output.push("         * arbitrary string field.\n");
+    output.push("         */\n");
+    output.push("        _stringField1?: string;\n");
     output.push("\n");
-    output.push("    /**\n");
-    output.push("     * arbitrary string field.\n");
-    output.push("     */\n");
-    output.push("    _stringField2?: string;\n");
+    output.push("        /**\n");
+    output.push("         * arbitrary string field.\n");
+    output.push("         */\n");
+    output.push("        _stringField2?: string;\n");
     output.push("\n");
-    output.push("    /**\n");
-    output.push("     * arbitrary string field.\n");
-    output.push("     */\n");
-    output.push("    _stringField3?: string;\n");
+    output.push("        /**\n");
+    output.push("         * arbitrary string field.\n");
+    output.push("         */\n");
+    output.push("        _stringField3?: string;\n");
     output.push("\n");
-    output.push("    /**\n");
-    output.push("     * arbitrary string field.\n");
-    output.push("     */\n");
-    output.push("    _stringField4?: string;\n");
+    output.push("        /**\n");
+    output.push("         * arbitrary string field.\n");
+    output.push("         */\n");
+    output.push("        _stringField4?: string;\n");
     output.push("\n");
-    output.push("    /**\n");
-    output.push("     * arbitrary string field.\n");
-    output.push("     */\n");
-    output.push("    _stringField5?: string;\n");
+    output.push("        /**\n");
+    output.push("         * arbitrary string field.\n");
+    output.push("         */\n");
+    output.push("        _stringField5?: string;\n");
     output.push("\n");
-    output.push("    /**\n");
-    output.push("     * arbitrary number field.\n");
-    output.push("     */\n");
-    output.push("    _numberField1?: number;\n");
+    output.push("        /**\n");
+    output.push("         * arbitrary number field.\n");
+    output.push("         */\n");
+    output.push("        _numberField1?: number;\n");
     output.push("\n");
-    output.push("    /**\n");
-    output.push("     * arbitrary number field.\n");
-    output.push("     */\n");
-    output.push("    _numberField2?: number;\n");
+    output.push("        /**\n");
+    output.push("         * arbitrary number field.\n");
+    output.push("         */\n");
+    output.push("        _numberField2?: number;\n");
     output.push("\n");
-    output.push("    /**\n");
-    output.push("     * arbitrary number field.\n");
-    output.push("     */\n");
-    output.push("    _numberField3?: number;\n");
+    output.push("        /**\n");
+    output.push("         * arbitrary number field.\n");
+    output.push("         */\n");
+    output.push("        _numberField3?: number;\n");
     output.push("\n");
-    output.push("    /**\n");
-    output.push("     * arbitrary number field.\n");
-    output.push("     */\n");
-    output.push("    _numberField4?: number;\n");
+    output.push("        /**\n");
+    output.push("         * arbitrary number field.\n");
+    output.push("         */\n");
+    output.push("        _numberField4?: number;\n");
     output.push("\n");
-    output.push("    /**\n");
-    output.push("     * arbitrary number field.\n");
-    output.push("     */\n");
-    output.push("    _numberField5?: number;\n");
+    output.push("        /**\n");
+    output.push("         * arbitrary number field.\n");
+    output.push("         */\n");
+    output.push("        _numberField5?: number;\n");
     output.push("\n");
-    output.push("    /**\n");
-    output.push("     * custom fields.\n");
-    output.push("     */\n");
-    output.push("    [name: string]: any;\n");
-    output.push("  }\n");
-    output.push("\n");
-
-    output.push("  type KiiACLSubject =\n");
-    output.push("    KiiGroup |\n");
-    output.push("    KiiUser |\n");
-    output.push("    KiiAnyAuthenticatedUser |\n");
-    output.push("    KiiAnonymousUser |\n");
-    output.push("    KiiThing;\n");
+    output.push("        /**\n");
+    output.push("         * custom fields.\n");
+    output.push("         */\n");
+    output.push("        [name: string]: any;\n");
+    output.push("    }\n");
     output.push("\n");
 
-    output.push('  interface APNSAlert {\n');
-    output.push('    title: string;\n');
-    output.push('    body: string;\n');
-    output.push('    "title-loc-key": string;\n');
-    output.push('    "title-loc-args": string[];\n');
-    output.push('    "action-loc-key": string;\n');
-    output.push('    "loc-key": string;\n');
-    output.push('    "loc-args": string[];\n');
-    output.push('    "launch-image": string;\n');
-    output.push('  }\n');
+    output.push("    type KiiACLSubject =\n");
+    output.push("        KiiGroup |\n");
+    output.push("        KiiUser |\n");
+    output.push("        KiiAnyAuthenticatedUser |\n");
+    output.push("        KiiAnonymousUser |\n");
+    output.push("        KiiThing;\n");
+    output.push("\n");
+
+    output.push('    interface APNSAlert {\n');
+    output.push('        title: string;\n');
+    output.push('        body: string;\n');
+    output.push('        "title-loc-key": string;\n');
+    output.push('        "title-loc-args": string[];\n');
+    output.push('        "action-loc-key": string;\n');
+    output.push('        "loc-key": string;\n');
+    output.push('        "loc-args": string[];\n');
+    output.push('        "launch-image": string;\n');
+    output.push('    }\n');
     output.push('\n');
 
-    output.push('  interface identityData {\n');
-    output.push('    emailAddress?: string;\n');
-    output.push('    phoneNumber?: string;\n');
-    output.push('    username?: string;\n');
-    output.push('  }\n');
+    output.push('    interface identityData {\n');
+    output.push('        emailAddress?: string;\n');
+    output.push('        phoneNumber?: string;\n');
+    output.push('        username?: string;\n');
+    output.push('    }\n');
     output.push('\n');
 
     classes.forEach(function (classSymbol) {
@@ -1703,12 +1704,12 @@ function format(classes) {
  * formats a classe into the buffer.
  */
 function formatClass(classSymbol, output) {
-    output.push("  /**\n");
-    output.push(classSymbol.classDesc.replace(/^(    )?/gm, "   * "));
+    output.push("    /**\n");
+    output.push(classSymbol.classDesc.replace(/^(    )?/gm, "     * "));
     output.push("\n");
-    output.push("   */\n");
+    output.push("     */\n");
 
-    output.push("  export class " + classSymbol.name + " {\n");
+    output.push("    export class " + classSymbol.name + " {\n");
 
     classSymbol.properties.forEach(function (property) {
         formatProperty(property, output);
@@ -1724,18 +1725,18 @@ function formatClass(classSymbol, output) {
         output.pop();
     }
 
-    output.push("  }\n");
+    output.push("    }\n");
 }
 
 /**
  * formats a property into the buffer.
  */
 function formatProperty(property, output) {
-    output.push("    /**\n");
-    output.push(property.desc.replace(/^(  )?/gm, "     * "));
+    output.push("        /**\n");
+    output.push(property.desc.replace(/^(  )?/gm, "         * "));
     output.push("\n");
-    output.push("     */\n");
-    output.push("    " + property.name + ": " + (property.type || "any") + ";\n");
+    output.push("         */\n");
+    output.push("        " + property.name + ": " + (property.type || "any") + ";\n");
 }
 
 /**
@@ -1744,67 +1745,67 @@ function formatProperty(property, output) {
 function formatMethod(classSymbol, method, output) {
     // JsDoc comments
 
-    output.push("    /**\n");
-    output.push(method.desc.replace(/^(  )?/gm, "     * "));
+    output.push("        /**\n");
+    output.push(method.desc.replace(/^(  )?/gm, "         * "));
     output.push("\n");
 
     if (method.deprecated) {
-        output.push("     *\n");
+        output.push("         *\n");
 
-        output.push("     * @deprecated ");
-        output.push(method.deprecated.replace(/\n */gm, "\n     *   "));
+        output.push("         * @deprecated ");
+        output.push(method.deprecated.replace(/\n */gm, "\n         *   "));
         output.push("\n");
     }
 
     if (method.params.length > 0) {
-        output.push("     *\n");
+        output.push("         *\n");
 
         method.params.forEach(function (param) {
-            output.push("     * @param " + param.name + " ");
-            output.push(param.desc.replace(/\n */gm, "\n     *   "));
+            output.push("         * @param " + param.name + " ");
+            output.push(param.desc.replace(/\n */gm, "\n         *   "));
             output.push("\n");
         });
     }
 
     if (method.returns.length > 0) {
-        output.push("     *\n");
+        output.push("         *\n");
 
         method.returns.forEach(function (ret) {
-            output.push("     * @return ");
-            output.push(ret.desc.replace(/\n(    )?/gm, "\n     *   "));
+            output.push("         * @return ");
+            output.push(ret.desc.replace(/\n(    )?/gm, "\n         *   "));
             output.push("\n");
         });
     }
 
     if (method.exceptions.length > 0) {
-        output.push("     *\n");
+        output.push("         *\n");
 
         method.exceptions.forEach(function (exception) {
-            output.push("     * @throws ");
-            output.push(exception.desc.replace(/\n(    )?/gm, "\n     *   "));
+            output.push("         * @throws ");
+            output.push(exception.desc.replace(/\n(    )?/gm, "\n         *   "));
             output.push("\n");
         });
     }
 
     if (method.see.length > 0) {
-        output.push("     *\n");
+        output.push("         *\n");
 
         method.see.forEach(function (see) {
-            output.push("     * @see " + see + "\n");
+            output.push("         * @see " + see + "\n");
         });
     }
 
     if (method.example.length > 0) {
-        output.push("     *\n");
+        output.push("         *\n");
 
         method.example.forEach(function (example) {
-            output.push("     * @example\n");
-            output.push(example.desc.replace(/^/gm, "     *   "));
+            output.push("         * @example\n");
+            output.push(example.desc.replace(/^/gm, "         *   "));
             output.push("\n");
         });
     }
 
-    output.push("     */\n");
+    output.push("         */\n");
 
     // method declaration
 
@@ -1812,7 +1813,7 @@ function formatMethod(classSymbol, method, output) {
 
     var name = isConstructor ? "constructor" : method.name;
 
-    output.push("    " + (method.isStatic ? "static " : "") + name);
+    output.push("        " + (method.isStatic ? "static " : "") + name);
 
     if (method.typeParams) {
         output.push("<");

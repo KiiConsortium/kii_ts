@@ -1,4 +1,4 @@
-/// <reference path="kii.d.ts" />
+/// <reference path="kii-cloud-sdk.d.ts" />
 
 function main() {
     Kii.initializeWithSite("abc", "def", KiiSite.JP);
@@ -6,10 +6,15 @@ function main() {
     var user = KiiUser.userWithUsername("name", "password");
 
     user.register({
-        success: function (user: KiiUser) {
+        success(user: KiiUser) {
         },
-        failure: function (user: KiiUser, message: string) {
+        failure(user: KiiUser, message: string) {
         }
+    });
+
+    user.register({
+        success: (user: KiiUser) => 123,
+        failure: (user: KiiUser, message: string) => 456
     });
 
     user.register()

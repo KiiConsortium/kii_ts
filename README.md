@@ -14,15 +14,21 @@ This project generates TypeScript and Tern type definitions for Kii Cloud SDK fr
 1. Download the SDK (html5-cloud-sdk-v2.2.2.js) from Kii and place it in the root directory.
 2. make
 
-## How it is generated
+## How is it generated
 
 html5-cloud-sdk-v2.2.2.js
--[preprocess.sh (minor tweak with sed)]→ preprocessed.js
--[jsdoc with custom template]→ type definitions 
+↓
+(preprocess.sh (minor tweak with sed))
+↓
+preprocessed.js
+↓
+(jsdoc with custom template)
+↓
+kii-cloud-sdk.d.ts, kii-cloud-sdk.json
 
 ## Custom template
 
-The custom template (typescript_template/publish.js) rewrites JsDoc Symbol objects with rather ad-hoc logics and generates a .d.ts file and a tern type definition file.
+The custom template (typescript_template/publish.js) rewrites JsDoc Symbol objects with rather ad-hoc logics, then generates a .d.ts file and a tern type definition file.
 
 ## How to use type definitions
 
@@ -31,7 +37,7 @@ The custom template (typescript_template/publish.js) rewrites JsDoc Symbol objec
 Refer the .d.ts file from your source code like this:
 
 ```
-/// <reference path="typings/kii/kii.d.ts" />
+/// <reference path="typings/kii-cloud-sdk/kii-cloud-sdk.d.ts" />
 ```
 
 ### Tern
@@ -44,4 +50,4 @@ Emacs|tern
 Brackets|Brackets-Ternific
 Atom|atom-ternjs
 
-Notes on Brackets-Ternific: Brackets-Ternific searches type definitions from plugin directory, not from the project directory, so that you have to copy kii.json to ~/Library/Application Support/Brackets/extensions/user/ternific/libs/tern/defs/ (for OS X).
+Notes on Brackets-Ternific: Brackets-Ternific searches type definitions from plugin directory, not from the project directory, so that you have to copy kii-cloud-sdk.json to ~/Library/Application Support/Brackets/extensions/user/ternific/libs/tern/defs/ (for OS X).

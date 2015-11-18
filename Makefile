@@ -1,11 +1,14 @@
-SOURCE=html5-cloud-sdk-v2.3.0.js
+KII_VERSION=v2.3.0
+SOURCE=html5-cloud-sdk-$(KII_VERSION).js
 
-libs/tern/defs/kii.json: typings/kii/kii.d.ts
-	mkdir -p typings/kii/
-	mv typings/kii/kii.json libs/tern/defs/kii.json
+all: typings/kii-cloud-sdk/kii-cloud-sdk.d.ts libs/tern/defs/kii-cloud-sdk.json
 
-typings/kii/kii.d.ts: preprocessed.js typescript_template/publish.js
-	jsdoc2 -t=typescript_template -d=typings/kii preprocessed.js
+libs/tern/defs/kii-cloud-sdk.json: typings/kii-cloud-sdk/kii-cloud-sdk.d.ts
+	mkdir -p libs/tern/defs/
+	mv typings/kii-cloud-sdk/kii-cloud-sdk.json libs/tern/defs/kii-cloud-sdk.json
+
+typings/kii-cloud-sdk/kii-cloud-sdk.d.ts: preprocessed.js typescript_template/publish.js
+	KII_VERSION=$(KII_VERSION) jsdoc2 -t=typescript_template -d=typings/kii-cloud-sdk preprocessed.js
 
 preprocessed.js: $(SOURCE) preprocess.sh
 	bash preprocess.sh $(SOURCE)
@@ -14,5 +17,5 @@ preprocessed.js: $(SOURCE) preprocess.sh
 
 clean:
 	rm preprocessed.js
-	rm typings/kii/kii.d.ts
-	rm libs/tern/defs/kii.json
+	rm typings/kii-cloud-sdk/kii-cloud-sdk.d.ts
+	rm libs/tern/defs/kii-cloud-sdk.json
