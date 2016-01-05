@@ -55,7 +55,9 @@ function publish(symbolSet) {
 
         var outDir = JSDOC.opt.d || SYS.pwd + "../out/jsdoc/";
 
-        IO.saveFile(outDir, "kii-cloud-sdk.d.ts", outputText);
+        var outFile = "kii-cloud-sdk-" + (process.env.KII_VERSION || "") + ".d.ts";
+
+        IO.saveFile(outDir, outFile, outputText);
 
         // output type definitions for Tern
 
@@ -70,7 +72,9 @@ function publish(symbolSet) {
             });
         });
 
-        IO.saveFile(outDir, "kii-cloud-sdk.json",
+        var jsonFile = "kii-cloud-sdk-" + (process.env.KII_VERSION || "") + ".json";
+
+        IO.saveFile(outDir, jsonFile,
                     JSON.stringify(buildTernJSONTypeDefinitions(classes),
                                    null,
                                    2));

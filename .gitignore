@@ -2,6 +2,6 @@
 .tern-port
 .DS_Store
 /html5-cloud-sdk*.js
-/preprocessed.js
-/typings/kii-cloud-sdk/kii-cloud-sdk.d.ts
-/libs/tern/defs/kii-cloud-sdk.json
+/preprocessed*.js
+/typings/kii-cloud-sdk/kii-cloud-sdk*.d.ts
+/libs/tern/defs/kii-cloud-sdk*.json
