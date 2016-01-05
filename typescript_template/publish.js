@@ -553,6 +553,12 @@ var overrides = {
             // declared to return Promise, adds type argument
             "returnType": new PromiseType("KiiAppAdminContext", "KiiUser")
         },
+        "registerGroupWithOwnerAndID": {
+            "parameters": {
+                // declared as Array, adds a type argument
+                "members": new ArrayType("KiiUser")
+            }
+        },
         "registerOwnerWithThingID": {
             // enriches type using type parameter
             "callbackParams": {
@@ -690,6 +696,12 @@ var overrides = {
             "returnType": "KiiGroup"
         },
         "groupWithNameAndMembers": {
+            "parameters": {
+                // declared as Array, adds a type argument
+                "members": new ArrayType("KiiUser")
+            }
+        },
+        "registerGroupWithID": {
             "parameters": {
                 // declared as Array, adds a type argument
                 "members": new ArrayType("KiiUser")
@@ -1599,6 +1611,11 @@ function format(classes) {
     output.push("         * lot identifier given by thing vendor.\n");
     output.push("         */\n");
     output.push("        _lot?: string;\n");
+    output.push("\n");
+    output.push("        /**\n");
+    output.push("         * product name given by thing vendor.\n");
+    output.push("         */\n");
+    output.push("        _productName?: string;\n");
     output.push("\n");
     output.push("        /**\n");
     output.push("         * arbitrary string field.\n");
