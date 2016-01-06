@@ -11,19 +11,19 @@ This project generates TypeScript and Tern type definitions for Kii Cloud SDK fr
 
 ## Usage
 
-1. Download the SDK (html5-cloud-sdk-v2.2.2.js) from Kii and place it in the root directory.
+1. Download the SDK (html5-cloud-sdk-v2.4.0.js) from Kii and place it in the root directory.
 2. make
 
 ## How is it generated
 
-html5-cloud-sdk-v2.2.2.js
-↓
-(preprocess.sh (minor tweak with sed))
-↓
-preprocessed.js
-↓
-(jsdoc with custom template)
-↓
+html5-cloud-sdk-v2.4.0.js  
+↓  
+(preprocess.sh (minor tweak with sed))  
+↓  
+preprocessed.js  
+↓  
+(jsdoc with custom template)  
+↓  
 kii-cloud-sdk.d.ts, kii-cloud-sdk.json
 
 ## Custom template
