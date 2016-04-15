@@ -737,6 +737,44 @@ var overrides = {
             }
         }
     },
+    "KiiPushInstallation": {
+        "installGcm": {
+            "parameters": {
+                // missing example
+                "callbacks": new CallbackType("KiiPushInstallation", "installGcm", [{"name": "response", type: "KiiGcmInstallationResponse"}], [{"name": "error", type: "Error"}])
+            },
+            // declared to return Promise, adds type argument
+            "returnType": new PromiseType("KiiGcmInstallationResponse")
+        },
+        "installMqtt": {
+            "parameters": {
+                // missing example
+                "callbacks": new CallbackType("KiiPushInstallation", "installMqtt", [{"name": "response", type: "KiiMqttInstallationResponse"}], [{"name": "error", type: "Error"}])
+            },
+            // declared to return Promise, adds type argument
+            "returnType": new PromiseType("KiiMqttInstallationResponse")
+        },
+        "getMqttEndpoint": {
+            "parameters": {
+                // missing example
+                "callbacks": new CallbackType("KiiPushInstallation", "getMqttEndpoint", [{"name": "response", type: "KiiMqttEndpoint"}], [{"name": "error", type: "Error"}])
+            },
+            // declared to return Promise, adds type argument
+            "returnType": new PromiseType("KiiMqttEndpoint")
+        },
+        "uninstall": {
+            "parameters": {
+                // missing example
+                "callbacks": new CallbackType("KiiPushInstallation", "uninstall", [], [{"name": "error", type: "Error"}])
+            }
+        },
+        "uninstallByInstallationID": {
+            "parameters": {
+                // missing example
+                "callbacks": new CallbackType("KiiPushInstallation", "uninstallByInstallationID", [], [{"name": "error", type: "Error"}])
+            }
+        }
+    },
     "KiiPushMessageBuilder": {
         "apnsAlert": {
             "parameters": {
@@ -1066,7 +1104,7 @@ var overrides = {
         },
         "getAccessTokenObject": {
             // declared to return Object
-            "returnType": "{ access_token: string, expires_at: Date }"
+            "returnType": "KiiAccessTokenObject"
         },
         "getLinkedSocialAccounts": {
             // declared to return Object
@@ -1165,6 +1203,14 @@ var overrides = {
             },
             // missing type annotation in @return
             "returnType": "KiiUser"
+        }
+    },
+    "KiiUserBuilder": {
+        "builderWithGlobalPhoneNumber": {
+            "parameters": {
+                // missing @param
+                "password": "string"
+            }
         }
     }
 };
@@ -1701,6 +1747,37 @@ function format(classes) {
     output.push('    }\n');
     output.push('\n');
 
+    output.push('    interface KiiAccessTokenObject {\n');
+    output.push('        access_token: string;\n');
+    output.push('        expires_at: Date;\n');
+    output.push('    }\n');
+    output.push('\n');
+
+    output.push('    interface KiiGcmInstallationResponse {\n');
+    output.push('        installationID: string;\n');
+    output.push('    }\n');
+    output.push('\n');
+
+    output.push('    interface KiiMqttInstallationResponse {\n');
+    output.push('        installationID: string;\n');
+    output.push('        installationRegistrationID: string;\n');
+    output.push('    }\n');
+    output.push('\n');
+
+    output.push('    interface KiiMqttEndpoint {\n');
+    output.push('        installationID: string;\n');
+    output.push('        username: string;\n');
+    output.push('        password: string;\n');
+    output.push('        mqttTopic: string;\n');
+    output.push('        host: string;\n');
+    output.push('        "X-MQTT-TTL": number;\n');
+    output.push('        portTCP: number;\n');
+    output.push('        portSSL: number;\n');
+    output.push('        portWS: number;\n');
+    output.push('        portWSS: number;\n');
+    output.push('    }\n');
+    output.push('\n');
+
     classes.forEach(function (classSymbol) {
         formatClass(classSymbol, output);
         output.push("\n");
@@ -1941,6 +2018,33 @@ var ternTypeAliases = {
         "emailAddress?": "string",
         "phoneNumber?": "string",
         "username?": "string"
+    },
+
+    "KiiAccessTokenObject": {
+        "access_token": "string",
+        "expires_at": "Date"
+    },
+
+    "KiiGcmInstallationResponse": {
+        "installationID": "string"
+    },
+
+    "KiiMqttInstallationResponse": {
+        "installationID": "string",
+        "installationRegistrationID": "string"
+    },
+
+    "KiiMqttEndpoint": {
+        "installationID": "string",
+        "username": "string",
+        "password": "string",
+        "mqttTopic": "string",
+        "host": "string",
+        "X-MQTT-TTL": "number",
+        "portTCP": "number",
+        "portSSL": "number",
+        "portWS": "number",
+        "portWSS": "number"
     }
 };
 
