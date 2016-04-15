@@ -1567,7 +1567,7 @@ function format(classes) {
     output.push("// Type definitions for Kii Cloud SDK " + (process.env.KII_VERSION || "") + "\n");
     output.push("// Project: http://en.kii.com/\n");
     output.push("// Definitions by: Kii Consortium <http://jp.kii.com/consortium/>\n");
-    output.push("// Definitions: https://github.com/borisyankov/DefinitelyTyped\n");
+    output.push("// Definitions: https://github.com/DefinitelyTyped/DefinitelyTyped\n");
     output.push("\n");
 
     output.push("/// <reference path='../es6-promise/es6-promise.d.ts' />\n");
