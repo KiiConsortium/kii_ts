@@ -1573,7 +1573,7 @@ function format(classes) {
     output.push("/// <reference path='../es6-promise/es6-promise.d.ts' />\n");
     output.push("\n");
 
-    output.push("declare module KiiCloud {\n");
+    output.push("declare namespace KiiCloud {\n");
 
     output.push("    enum KiiACLAction {\n");
     output.push("        KiiACLBucketActionCreateObjects,\n");
