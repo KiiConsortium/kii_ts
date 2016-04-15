@@ -1570,9 +1570,6 @@ function format(classes) {
     output.push("// Definitions: https://github.com/DefinitelyTyped/DefinitelyTyped\n");
     output.push("\n");
 
-    output.push("/// <reference path='../es6-promise/es6-promise.d.ts' />\n");
-    output.push("\n");
-
     output.push("declare namespace KiiCloud {\n");
 
     output.push("    enum KiiACLAction {\n");
