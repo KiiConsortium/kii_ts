@@ -100,6 +100,8 @@ function formatTernType(type) {
 
         if (typeName == "any") {
             return "?";
+        } else if (typeName == "boolean") {
+            return "bool";
         } else if (typeName.match(/^[A-Z]/) && !ternTypeAliases[typeName]) {
             return "+" + typeName;
         } else {
