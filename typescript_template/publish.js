@@ -434,6 +434,8 @@ var callbackParamTypes = {
     'theTgtObjectUri': 'string',
     'theUser': 'KiiUser',
     'thing': 'KiiThing',
+    'thingAuthContext': 'KiiThingContext',
+    'thingContext': 'KiiThingContext',
     'topic': 'KiiTopic',
     'topicList': new ArrayType('KiiTopic'),
     'user': 'KiiUser'
@@ -1588,7 +1590,8 @@ function format(classes) {
     output.push("        JP,\n");
     output.push("        CN,\n");
     output.push("        SG,\n");
-    output.push("        CN3\n");
+    output.push("        CN3,\n");
+    output.push("        EU\n");
     output.push("    }\n");
     output.push("\n");
 
@@ -1597,7 +1600,8 @@ function format(classes) {
     output.push("        JP,\n");
     output.push("        CN,\n");
     output.push("        SG,\n");
-    output.push("        CN3\n");
+    output.push("        CN3,\n");
+    output.push("        EU\n");
     output.push("    }\n");
     output.push("\n");
 
@@ -2069,7 +2073,8 @@ function buildTernJSONTypeDefinitions(classes) {
             "JP": "+KiiSite",
             "CN": "+KiiSite",
             "SG": "+KiiSite",
-            "CN3": "+KiiSite"
+            "CN3": "+KiiSite",
+            "EU": "+KiiSite"
         },
 
         "KiiAnalyticsSite": {
@@ -2077,7 +2082,8 @@ function buildTernJSONTypeDefinitions(classes) {
             "JP": "+KiiAnalyticsSite",
             "CN": "+KiiAnalyticsSite",
             "SG": "+KiiAnalyticsSite",
-            "CN3": "+KiiAnalyticsSite"
+            "CN3": "+KiiAnalyticsSite",
+            "EU": "+KiiAnalyticsSite"
         },
 
         "KiiSocialNetworkName": {
