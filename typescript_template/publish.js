@@ -1582,6 +1582,9 @@ function format(classes) {
     output.push("        KiiACLBucketActionDropBucket,\n");
     output.push("        KiiACLObjectActionRead,\n");
     output.push("        KiiACLObjectActionWrite,\n");
+    output.push("        KiiACLBucketActionReadObjects,\n");
+    output.push("        KiiACLSubscribeToTopic,\n");
+    output.push("        KiiACLSendMessageToTopic,\n");
     output.push("    }\n");
     output.push("\n");
 
@@ -2065,7 +2068,10 @@ function buildTernJSONTypeDefinitions(classes) {
             "KiiACLBucketActionQueryObjects": "+KiiACLAction",
             "KiiACLBucketActionDropBucket": "+KiiACLAction",
             "KiiACLObjectActionRead": "+KiiACLAction",
-            "KiiACLObjectActionWrite": "+KiiACLAction"
+            "KiiACLObjectActionWrite": "+KiiACLAction",
+            "KiiACLBucketActionReadObjects": "+KiiACLAction",
+            "KiiACLSubscribeToTopic": "+KiiACLAction",
+            "KiiACLSendMessageToTopic": "+KiiACLAction"
         },
 
         "KiiSite": {
