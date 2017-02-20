@@ -1,4 +1,4 @@
-KII_VERSION=v2.4.6
+KII_VERSION=v2.4.9
 SOURCE=html5-cloud-sdk-$(KII_VERSION).js
 DEST_DIR=typings/kii-cloud-sdk
 DEST_WITHOUT_VERSION=$(DEST_DIR)/kii-cloud-sdk.d.ts

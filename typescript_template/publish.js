@@ -670,7 +670,18 @@ var overrides = {
             // missing @return
             "returnType": "KiiClause"
         },
+        "not": {
+            "parameters": {
+                "clause": "KiiClause"
+            },
+            // missing @return
+            "returnType": "KiiClause"
+        },
         "startsWith": {
+            // missing @return
+            "returnType": "KiiClause"
+        },
+        "hasField": {
             // missing @return
             "returnType": "KiiClause"
         }
@@ -739,6 +750,10 @@ var overrides = {
                 // missing type annotation in @param
                 "overwrite": "boolean"
             }
+        },
+        "getKeys": {
+            // declared as Array, adds a type argument
+            "returnType": new ArrayType("string")
         }
     },
     "KiiPushInstallation": {
@@ -1215,6 +1230,17 @@ var overrides = {
                 // missing @param
                 "password": "string"
             }
+        }
+    },
+    "KiiErrorParser": {
+        "parse": {
+            "parameters": {
+                "error": new AdHocTypes("T", "+string|+Error")
+            },
+            "typeParams": [
+                "T extends string | Error"
+            ],
+            "returnType": "KiiError"
         }
     }
 };
@@ -1784,6 +1810,13 @@ function format(classes) {
     output.push('    }\n');
     output.push('\n');
 
+    output.push('    interface KiiError {\n');
+    output.push('        status: number;\n');
+    output.push('        code: string;\n');
+    output.push('        message: string;\n');
+    output.push('    }\n');
+    output.push('\n');
+
     classes.forEach(function (classSymbol) {
         formatClass(classSymbol, output);
         output.push("\n");
@@ -2051,6 +2084,12 @@ var ternTypeAliases = {
         "portSSL": "number",
         "portWS": "number",
         "portWSS": "number"
+    },
+
+    "KiiError": {
+        "status": "number",
+        "code": "string",
+        "message": "string"
     }
 };
 
