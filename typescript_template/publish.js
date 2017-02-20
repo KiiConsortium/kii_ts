@@ -1649,7 +1649,7 @@ function format(classes) {
     output.push("    } | {\n");
     output.push("        oauth_token: string,\n");
     output.push("        oauth_token_secret: string\n");
-    output.push("    }\n");
+    output.push("    };\n");
     output.push("\n");
 
     output.push("    interface KiiSocialAccountInfo {\n");
